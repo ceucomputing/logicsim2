@@ -1,6 +1,8 @@
 // Logic Gate Simulator
 // Copyright (c) 2016 Ministry of Education, Singapore. All rights reserved.
 
+/* global $:false, interact:false */
+
 const Consts = {
   GRID: 20,
   HEIGHT: 20,
@@ -183,30 +185,83 @@ let Simulation  = {
 
 };
 
-const main = function() {
-  let id = Simulation.addNode(0, 1, () => true);
-  let id2 = Simulation.addNode(1, 1, () => true);
-  let id3 = Simulation.addNode(1, 0, () => true);
-  Simulation.addLink(id, 0, id2, 0);
-  Simulation.addLink(id2, 0, id3, 0);
-  Simulation.update();
-  Simulation.removeNode(id);
-}
+// const main = function() {
+//   let id = Simulation.addNode(0, 1, () => true);
+//   let id2 = Simulation.addNode(1, 1, () => true);
+//   let id3 = Simulation.addNode(1, 0, () => true);
+//   Simulation.addLink(id, 0, id2, 0);
+//   Simulation.addLink(id2, 0, id3, 0);
+//   Simulation.update();
+//   Simulation.removeNode(id);
+// }
+
+const board = $('#board');
+const grid = $('#grid');
 
 const resizeHandler = function() {
-  const board = $('#board');
-  const newWidth = Math.floor(board.parent().width() / Consts.GRID) * Consts.GRID + 1;
-  board.width(newWidth);
+  const newWidth = Math.floor(grid.parent().width() / Consts.GRID) * Consts.GRID + 1;
+  grid.width(newWidth);
 }
 
 $(document).ready(function() {
-  const board = $('#board');
-  const grid = $('#grid');
-  board.height(Consts.GRID * Consts.HEIGHT + 1);
-  grid.attr('width', Consts.GRID);
-  grid.attr('height', Consts.GRID);
-  grid.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
+  const square = $('#square');
+  grid.height(Consts.GRID * Consts.HEIGHT + 1);
+  square.attr('width', Consts.GRID);
+  square.attr('height', Consts.GRID);
+  square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
   resizeHandler();
 });
 
 $(window).resize(resizeHandler);
+
+interact('.node')
+  .origin('#board')
+  .draggable({
+
+    restrict: {
+      restriction: grid,
+      endOnly: true,
+      elementRect: { left: 0, right: 1, top: 0, bottom: 1 }
+    },
+
+    manualStart: true,
+
+    snap: {
+      targets: [
+        function(x, y) {
+          const offset = grid.offset();
+          const newX =
+            Math.round((x - 1.5 * Consts.GRID - offset.left) / Consts.GRID) * Consts.GRID +
+            1.5 * Consts.GRID + offset.left;
+          const newY =
+            Math.round((y - 1.5 * Consts.GRID - offset.top) / Consts.GRID) * Consts.GRID +
+            1.5 * Consts.GRID + offset.top;
+          return { x: newX, y: newY }
+        }
+      ],
+    },
+
+    onmove(event) {
+      const target = $(event.target);
+      target.offset({
+        left: event.pageX - 1.5 * Consts.GRID,
+        top: event.pageY - 1.5 * Consts.GRID
+      });
+    }
+
+  })
+
+  .on('move', function(event) {
+    const interaction = event.interaction;
+    if (interaction.pointerIsDown && !interaction.interacting()) {
+      let target = $(event.currentTarget);
+      if (target.hasClass('node-palette')) {
+        const clone = target.clone();
+        clone.removeClass('node-palette');
+        clone.appendTo('#nodes');
+        clone.offset($(event.currentTarget).offset());
+        target = clone;
+      }
+      interaction.start({ name: 'drag' }, event.interactable, target);
+    }
+  });
