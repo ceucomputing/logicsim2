@@ -58,7 +58,7 @@ let Simulation  = {
   // Returns whether two ports are allowed to link.
   canLink(outNodeId, outPortId, inNodeId, inPortId) {
     let queue = [];
-    let visited = [];
+    // let visited = [];
 
     // Populate seed nodes.
     for (let port of this.nodes[inNodeId].outPorts) {
@@ -185,30 +185,27 @@ let Simulation  = {
 
 const main = function() {
   let id = Simulation.addNode(0, 1, () => true);
-  let id2 = Simulation.addNode(1, 1, (x) => { console.log(x); return true; });
+  let id2 = Simulation.addNode(1, 1, () => true);
   let id3 = Simulation.addNode(1, 0, () => true);
   Simulation.addLink(id, 0, id2, 0);
   Simulation.addLink(id2, 0, id3, 0);
-  console.log(Simulation);
   Simulation.update();
-  console.log(Simulation);
   Simulation.removeNode(id);
-  console.log(Simulation);
 }
 
 const resizeHandler = function() {
-  const board = $("#board");
+  const board = $('#board');
   const newWidth = Math.floor(board.parent().width() / Consts.GRID) * Consts.GRID + 1;
   board.width(newWidth);
 }
 
 $(document).ready(function() {
-  const board = $("#board");
-  const grid = $("#grid");
+  const board = $('#board');
+  const grid = $('#grid');
   board.height(Consts.GRID * Consts.HEIGHT + 1);
-  grid.attr("width", Consts.GRID);
-  grid.attr("height", Consts.GRID);
-  grid.children().attr("d", `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
+  grid.attr('width', Consts.GRID);
+  grid.attr('height', Consts.GRID);
+  grid.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
   resizeHandler();
 });
 
