@@ -1,5 +1,6 @@
 $icon-font-path: '../fonts/';
 $grid: 20px;
+$node: 3;
 
 // bower:scss
 @import "bower_components/bootstrap-sass/assets/stylesheets/_bootstrap.scss";
@@ -13,11 +14,28 @@ $grid: 20px;
 }
 
 .node {
-  border: 1px solid black;
-  height: 3 * $grid + 1;
+  height: $node * $grid + 1;
   position: absolute;
-  width: 3 * $grid + 1;
+  width: $node * $grid + 1;
   z-index: 1;
+}
+
+#board circle:hover {
+  stroke: white;
+  stroke-width: 5px;
+}
+
+.palette {
+  width: 100%;
+}
+
+.palette col {
+  width: 25%;
+}
+
+.palette td {
+  height: $node * $grid;
+  vertical-align: top;
 }
 
 body {

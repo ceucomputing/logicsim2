@@ -6,6 +6,7 @@
 const Consts = {
   GRID: 20,
   HEIGHT: 20,
+  NODE: 3
 };
 
 let Simulation  = {
@@ -197,10 +198,118 @@ let Simulation  = {
 
 const board = $('#board');
 const grid = $('#grid');
+const nodes = $('#nodes');
+let map = [[]];
+
+// Print map to console for debugging purposes.
+const printMap = function() {
+  const strings = new Array(Consts.HEIGHT);
+  for (let i = 0; i < strings.length; i++) {
+    strings[i] = '';
+  }
+  for (let column of map) {
+    for (let i = 0; i < strings.length; i++) {
+      strings[i] += column[i] ? "*" : ".";
+    }
+  }
+  console.log(strings.join('\n'));
+}
+
+const toGrid = function(coords) {
+  const offset = grid.offset();
+  return {
+    x: Math.round((coords.x - offset.left) / Consts.GRID),
+    y: Math.round((coords.y - offset.top) / Consts.GRID),
+  };
+}
+
+const toPage = function(coords) {
+  const offset = grid.offset();
+  return {
+    x: offset.left + coords.x * Consts.GRID,
+    y: offset.top + coords.y * Consts.GRID,
+  };
+}
+
+const isFreeSpace = function({x, y}) {
+  if (x < 1 || y < 1) return false;
+  if (x > map.length - Consts.NODE - 1) return false;
+  if (y > Consts.HEIGHT - Consts.NODE - 1) return false;
+  for (let i = -1; i < Consts.NODE + 1; i++) {
+    for (let j = -1; j < Consts.NODE + 1; j++) {
+      if (map[x + i][y + j]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+const findFreeSpace = function({x, y}) {
+  // TODO: optimise if this becomes too slow
+  const maxDimension = Math.max(map.length, Consts.HEIGHT);
+  if (isFreeSpace({x, y})) return {x, y};
+  for (let d = 1; d < maxDimension; d++) {
+    if (isFreeSpace({x: x - d, y: y})) return {x: x - d, y: y};
+    if (isFreeSpace({x: x + d, y: y})) return {x: x + d, y: y};
+    if (isFreeSpace({x: x, y: y - d})) return {x: x, y: y - d};
+    if (isFreeSpace({x: x, y: y + d})) return {x: x, y: y + d};
+    for (let dd = 1; dd <= d - 1; dd++) {
+      if (isFreeSpace({x: x - dd, y: y - d})) return {x: x - dd, y: y - d};
+      if (isFreeSpace({x: x - dd, y: y + d})) return {x: x - dd, y: y + d};
+      if (isFreeSpace({x: x + dd, y: y - d})) return {x: x + dd, y: y - d};
+      if (isFreeSpace({x: x + dd, y: y + d})) return {x: x + dd, y: y + d};
+      if (isFreeSpace({x: x - d, y: y - dd})) return {x: x - d, y: y - dd};
+      if (isFreeSpace({x: x + d, y: y - dd})) return {x: x + d, y: y - dd};
+      if (isFreeSpace({x: x - d, y: y + dd})) return {x: x - d, y: y + dd};
+      if (isFreeSpace({x: x + d, y: y + dd})) return {x: x + d, y: y + dd};
+    }
+    if (isFreeSpace({x: x - d, y: y - d})) return {x: x - d, y: y - d};
+    if (isFreeSpace({x: x - d, y: y + d})) return {x: x - d, y: y + d};
+    if (isFreeSpace({x: x + d, y: y - d})) return {x: x + d, y: y - d};
+    if (isFreeSpace({x: x + d, y: y + d})) return {x: x + d, y: y + d};
+  }
+  // TODO: Handle exception more elegantly!
+  alert('Can\'t find free space!');
+  return null;
+}
 
 const resizeHandler = function() {
-  const newWidth = Math.floor(grid.parent().width() / Consts.GRID) * Consts.GRID + 1;
-  grid.width(newWidth);
+  const oldGridWidth = map.length;
+  const newGridWidth = Math.floor(grid.parent().width() / Consts.GRID);
+  if (newGridWidth !== oldGridWidth) {
+    // Resize internal map.
+    let oldMap = map;
+    map = new Array(newGridWidth);
+    for (let i = 0; i < newGridWidth; i++) {
+      map[i] = new Array(Consts.HEIGHT);
+      for (let j = 0; j < Consts.HEIGHT; j++) {
+        map[i][j] = false;
+      }
+    }
+
+    // Initialise new map.
+    for (let node of $('#nodes').children()) {
+      const n = $(node);
+      let nodeInfo = n.data('nodeInfo');
+      let freeSpace = findFreeSpace({ x: nodeInfo.gridX, y: nodeInfo.gridY });
+      // TODO: handle no free space
+      nodeInfo.gridX = freeSpace.x;
+      nodeInfo.gridY = freeSpace.y;
+      n.data('nodeInfo', nodeInfo);
+      const offset = toPage(freeSpace);
+      n.offset({ left: offset.x, top: offset.y });
+      for (let i = 0; i < Consts.NODE; i++) {
+        for (let j = 0; j < Consts.NODE; j++) {
+          map[freeSpace.x + i][freeSpace.y + j] = true;
+        }
+      }
+    }
+
+    // Resize visible grid UI.
+    const newWidth = newGridWidth * Consts.GRID + 1;
+    grid.width(newWidth);
+  }
 }
 
 $(document).ready(function() {
@@ -218,25 +327,24 @@ interact('.node')
   .origin('#board')
   .draggable({
 
-    restrict: {
-      restriction: grid,
-      endOnly: true,
-      elementRect: { left: 0, right: 1, top: 0, bottom: 1 }
-    },
+    // restrict: {
+    //   restriction: grid,
+    //   endOnly: true,
+    //   elementRect: { left: 0, right: 1, top: 0, bottom: 1 }
+    // },
 
     manualStart: true,
 
     snap: {
       targets: [
         function(x, y) {
-          const offset = grid.offset();
-          const newX =
-            Math.round((x - 1.5 * Consts.GRID - offset.left) / Consts.GRID) * Consts.GRID +
-            1.5 * Consts.GRID + offset.left;
-          const newY =
-            Math.round((y - 1.5 * Consts.GRID - offset.top) / Consts.GRID) * Consts.GRID +
-            1.5 * Consts.GRID + offset.top;
-          return { x: newX, y: newY }
+          let newCoords = toPage(toGrid({
+            x: x - Consts.NODE / 2 * Consts.GRID,
+            y: y - Consts.NODE / 2 * Consts.GRID
+          }));
+          newCoords.x += Consts.NODE / 2 * Consts.GRID;
+          newCoords.y += Consts.NODE / 2 * Consts.GRID;
+          return newCoords;
         }
       ],
     },
@@ -244,9 +352,61 @@ interact('.node')
     onmove(event) {
       const target = $(event.target);
       target.offset({
-        left: event.pageX - 1.5 * Consts.GRID,
-        top: event.pageY - 1.5 * Consts.GRID
+        left: event.pageX - Consts.NODE / 2 * Consts.GRID,
+        top: event.pageY - Consts.NODE / 2 * Consts.GRID
       });
+    },
+
+    onstart(event) {
+      const target = $(event.target);
+      let nodeInfo = target.data('nodeInfo');
+      if (typeof nodeInfo !== 'undefined') {
+        for (let i = 0; i < Consts.NODE; i++) {
+          for (let j = 0; j < Consts.NODE; j++) {
+            map[nodeInfo.gridX + i][nodeInfo.gridY + j] = false;
+          }
+        }
+      }
+    },
+
+    onend(event) {
+      const target = $(event.target);
+      let {x: gridX, y: gridY} = toGrid({
+        x: event.pageX - Consts.NODE / 2 * Consts.GRID,
+        y: event.pageY - Consts.NODE / 2 * Consts.GRID
+      });
+
+      // Detect if node should be deleted.
+
+
+      // Otherwise find nearest free space for node.
+      // If no free space can be found, delete the node.
+      let freeSpace = findFreeSpace({ x: gridX, y: gridY });
+      // TODO: handle no free space
+      gridX = freeSpace.x;
+      gridY = freeSpace.y;
+
+      // Move node to nearest free space.
+      const coords = toPage(freeSpace);
+      target.offset({ left: coords.x, top: coords.y });
+
+      // Update nodeInfo, or create nodeInfo if new node was created.
+      let nodeInfo = target.data('nodeInfo');
+      if (typeof nodeInfo === 'undefined') {
+        nodeInfo = {};
+        // TODO: create node in simulation and nodeId
+      }
+      nodeInfo.gridX = gridX;
+      nodeInfo.gridY = gridY;
+      target.data('nodeInfo', nodeInfo);
+
+      // Update map.
+      for (let i = 0; i < Consts.NODE; i++) {
+        for (let j = 0; j < Consts.NODE; j++) {
+          map[gridX + i][gridY + j] = true;
+        }
+      }
+
     }
 
   })
