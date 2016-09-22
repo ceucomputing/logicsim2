@@ -323,8 +323,8 @@ $(document).ready(function() {
 
 $(window).resize(resizeHandler);
 
-interact('.node')
-  .origin('#board')
+interact('.node-grabber')
+  // .origin('#board')
   .draggable({
 
     // restrict: {
@@ -350,7 +350,7 @@ interact('.node')
     },
 
     onmove(event) {
-      const target = $(event.target);
+      const target = $(event.target).parent();
       target.offset({
         left: event.pageX - Consts.NODE / 2 * Consts.GRID,
         top: event.pageY - Consts.NODE / 2 * Consts.GRID
@@ -358,7 +358,7 @@ interact('.node')
     },
 
     onstart(event) {
-      const target = $(event.target);
+      const target = $(event.target).parent();
       let nodeInfo = target.data('nodeInfo');
       if (typeof nodeInfo !== 'undefined') {
         for (let i = 0; i < Consts.NODE; i++) {
@@ -370,7 +370,7 @@ interact('.node')
     },
 
     onend(event) {
-      const target = $(event.target);
+      const target = $(event.target).parent();
       let {x: gridX, y: gridY} = toGrid({
         x: event.pageX - Consts.NODE / 2 * Consts.GRID,
         y: event.pageY - Consts.NODE / 2 * Consts.GRID
@@ -414,7 +414,7 @@ interact('.node')
   .on('move', function(event) {
     const interaction = event.interaction;
     if (interaction.pointerIsDown && !interaction.interacting()) {
-      let target = $(event.currentTarget);
+      let target = $(event.currentTarget).parent();
       if (target.hasClass('node-palette')) {
         const clone = target.clone();
         clone.removeClass('node-palette');
@@ -422,6 +422,6 @@ interact('.node')
         clone.offset($(event.currentTarget).offset());
         target = clone;
       }
-      interaction.start({ name: 'drag' }, event.interactable, target);
+      interaction.start({ name: 'drag' }, event.interactable, target.children('.node-grabber'));
     }
   });
