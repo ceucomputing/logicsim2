@@ -6,7 +6,8 @@
 const Consts = {
   GRID: 20,
   HEIGHT: 20,
-  NODE: 3
+  NODE: 3,
+  PALETTE: 4,
 };
 
 let Simulation  = {
@@ -201,20 +202,21 @@ const grid = $('#grid');
 const nodes = $('#nodes');
 let map = [[]];
 
-// Print map to console for debugging purposes.
-const printMap = function() {
-  const strings = new Array(Consts.HEIGHT);
-  for (let i = 0; i < strings.length; i++) {
-    strings[i] = '';
-  }
-  for (let column of map) {
-    for (let i = 0; i < strings.length; i++) {
-      strings[i] += column[i] ? "*" : ".";
-    }
-  }
-  console.log(strings.join('\n'));
-}
+// // Print map to console for debugging purposes.
+// const printMap = function() {
+//   const strings = new Array(Consts.HEIGHT);
+//   for (let i = 0; i < strings.length; i++) {
+//     strings[i] = '';
+//   }
+//   for (let column of map) {
+//     for (let i = 0; i < strings.length; i++) {
+//       strings[i] += column[i] ? "*" : ".";
+//     }
+//   }
+//   console.log(strings.join('\n'));
+// }
 
+// Convert coordinates from page-space (pixels) to grid-space (squares).
 const toGrid = function(coords) {
   const offset = grid.offset();
   return {
@@ -223,6 +225,7 @@ const toGrid = function(coords) {
   };
 }
 
+// Convert coordinates from grid-space (squares) to page-space (pixels).
 const toPage = function(coords) {
   const offset = grid.offset();
   return {
@@ -309,16 +312,56 @@ const resizeHandler = function() {
     // Resize visible grid UI.
     const newWidth = newGridWidth * Consts.GRID + 1;
     grid.width(newWidth);
+    $('.link').width(newWidth);
+  }
+}
+
+const initPalette = function(id, defs) {
+  const table = $(id);
+  const template = $('#node-template').children().first();
+  let row = null;
+  for (let i = 0; i < defs.length; i++) {
+    if (i % Consts.PALETTE === 0) {
+      if (row !== null) {
+        row.appendTo(table);
+      }
+      row = $(document.createElement('tr'));
+    }
+    let data = $(document.createElement('td'));
+    let node = template.clone();
+    // TODO: add functionality to node palette item
+    node.appendTo(data);
+    data.appendTo(row);
+  }
+  if (row !== null) {
+    for (let i = 0; i < Consts.PALETTE - row.children().length; i++) {
+      $(document.createElement('td')).appendTo(row);
+    }
+    row.appendTo(table);
   }
 }
 
 $(document).ready(function() {
+  // Dynamically resize grid.
   const square = $('#square');
   grid.height(Consts.GRID * Consts.HEIGHT + 1);
   square.attr('width', Consts.GRID);
   square.attr('height', Consts.GRID);
   square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
   resizeHandler();
+
+  // TODO: Set up inputs palette.
+
+
+  // TODO: Set up logic gates palette.
+  initPalette('#gates-palette', [
+    1,
+    2,
+    3
+  ]);
+
+  // TODO: Set up outputs palette.
+
 });
 
 $(window).resize(resizeHandler);
@@ -376,7 +419,7 @@ interact('.node-grabber')
         y: event.pageY - Consts.NODE / 2 * Consts.GRID
       });
 
-      // Detect if node should be deleted.
+      // TODO: Detect if node should be deleted.
 
 
       // Otherwise find nearest free space for node.
@@ -406,7 +449,6 @@ interact('.node-grabber')
           map[gridX + i][gridY + j] = true;
         }
       }
-
     }
 
   })
@@ -418,10 +460,63 @@ interact('.node-grabber')
       if (target.hasClass('node-palette')) {
         const clone = target.clone();
         clone.removeClass('node-palette');
+        // TODO: customise clone further
         clone.appendTo('#nodes');
-        clone.offset($(event.currentTarget).offset());
+        clone.offset($(event.currentTarget).parent().offset());
         target = clone;
       }
-      interaction.start({ name: 'drag' }, event.interactable, target.children('.node-grabber'));
+      // Note: interaction.start() does NOT work with a jQuery-wrapped element,
+      // so it is unwrapped in the call below.
+      interaction.start({ name: 'drag' }, event.interactable, target.children('.node-grabber')[0]);
     }
+  });
+
+interact('.node-port-in')
+  .draggable({
+    onstart(event) {
+      $(event.target).addClass('node-dragging');
+    },
+    onend(event) {
+      $(event.target).removeClass('node-dragging');
+    }
+  })
+  .dropzone({
+    accept: '.node-port-out',
+    ondropactivate(event) {
+      const target = $(event.target);
+      if (!target.parent().hasClass('node-palette')) {
+        target.addClass('node-dropzone');
+      }
+    },
+    ondropdeactivate(event) {
+      const target = $(event.target);
+      if (!target.parent().hasClass('node-palette')) {
+        target.removeClass('node-dropzone');
+      }
+    },
+  });
+
+interact('.node-port-out')
+  .draggable({
+    onstart(event) {
+      $(event.target).addClass('node-dragging');
+    },
+    onend(event) {
+      $(event.target).removeClass('node-dragging');
+    }
+  })
+  .dropzone({
+    accept: '.node-port-in',
+    ondropactivate(event) {
+      const target = $(event.target);
+      if (!target.parent().hasClass('node-palette')) {
+        target.addClass('node-dropzone');
+      }
+    },
+    ondropdeactivate(event) {
+      const target = $(event.target);
+      if (!target.parent().hasClass('node-palette')) {
+        target.removeClass('node-dropzone');
+      }
+    },
   });
