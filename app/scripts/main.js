@@ -6,9 +6,15 @@
 const Consts = {
   GRID: 20,
   HEIGHT: 20,
-  NODE: 3,
+  NODE: 5,
   PALETTE: 4,
 };
+
+/*
+================================================================================
+SIMULATION
+================================================================================
+*/
 
 let Simulation  = {
 
@@ -19,7 +25,7 @@ let Simulation  = {
   links: [],
 
   // Adds a node of the given type and returns its id.
-  addNode(numInPorts, numOutPorts, logic) {
+  addNode(numInPorts, numOutPorts, logic, ele) {
     let nodeId = this.nodes.length;
     let inPorts = [];
     let outPorts = [];
@@ -30,11 +36,12 @@ let Simulation  = {
       outPorts[i] = { nodeId: nodeId, portId: i, inPort: false, linkId: null }
     }
     this.nodes[nodeId] = {
-      nodeId: nodeId,
+      nodeId,
       state: null,
-      inPorts: inPorts,
-      outPorts: outPorts,
-      logic: logic
+      inPorts,
+      outPorts,
+      logic,
+      ele,
     };
     return nodeId;
   },
@@ -56,6 +63,7 @@ let Simulation  = {
         this.removeLink(outPort.linkId);
       }
     }
+    $(node.ele).remove();
     delete this.nodes[nodeId];
   },
 
@@ -78,15 +86,16 @@ let Simulation  = {
   },
 
   // Adds a link between two ports.
-  addLink(outNodeId, outPortId, inNodeId, inPortId) {
+  addLink(outNodeId, outPortId, inNodeId, inPortId, ele) {
     let linkId = this.links.length;
     this.links[linkId] = {
-      linkId: linkId,
+      linkId,
       state: null,
-      outNodeId: outNodeId,
-      outPortId: outPortId,
-      inNodeId: inNodeId,
-      inPortId: inPortId,
+      outNodeId,
+      outPortId,
+      inNodeId,
+      inPortId,
+      ele,
     }
 
     let outPort = this.nodes[outNodeId].outPorts[outPortId];
@@ -112,6 +121,7 @@ let Simulation  = {
     let link = this.links[linkId];
     this.nodes[link.outNodeId].outPorts[link.outPortId].linkId = null;
     this.nodes[link.inNodeId].inPorts[link.inPortId].linkId = null;
+    $(link.ele).remove();
     delete this.links[linkId];
   },
 
@@ -187,6 +197,13 @@ let Simulation  = {
 
 };
 
+
+/*
+================================================================================
+USER INTERFACE
+================================================================================
+*/
+
 // const main = function() {
 //   let id = Simulation.addNode(0, 1, () => true);
 //   let id2 = Simulation.addNode(1, 1, () => true);
@@ -234,6 +251,7 @@ const toPage = function(coords) {
   };
 }
 
+// Returns whether the given coordinates has space for a node.
 const isFreeSpace = function({x, y}) {
   if (x < 1 || y < 1) return false;
   if (x > map.length - Consts.NODE - 1) return false;
@@ -248,6 +266,7 @@ const isFreeSpace = function({x, y}) {
   return true;
 }
 
+// Returns the closest set of coordinates with space for a node, or null if none is found.
 const findFreeSpace = function({x, y}) {
   // TODO: optimise if this becomes too slow
   const maxDimension = Math.max(map.length, Consts.HEIGHT);
@@ -272,8 +291,6 @@ const findFreeSpace = function({x, y}) {
     if (isFreeSpace({x: x + d, y: y - d})) return {x: x + d, y: y - d};
     if (isFreeSpace({x: x + d, y: y + d})) return {x: x + d, y: y + d};
   }
-  // TODO: Handle exception more elegantly!
-  alert('Can\'t find free space!');
   return null;
 }
 
@@ -292,11 +309,16 @@ const resizeHandler = function() {
     }
 
     // Initialise new map.
+    let nodesToDelete = [];
     for (let node of $('#nodes').children()) {
       const n = $(node);
       let nodeInfo = n.data('nodeInfo');
       let freeSpace = findFreeSpace({ x: nodeInfo.gridX, y: nodeInfo.gridY });
       // TODO: handle no free space
+      if (freeSpace === null) {
+        nodesToDelete.push(node);
+        continue;
+      }
       nodeInfo.gridX = freeSpace.x;
       nodeInfo.gridY = freeSpace.y;
       n.data('nodeInfo', nodeInfo);
@@ -307,6 +329,9 @@ const resizeHandler = function() {
           map[freeSpace.x + i][freeSpace.y + j] = true;
         }
       }
+    }
+    for (let node of nodesToDelete) {
+      removeNodeEle(node);
     }
 
     // Resize visible grid UI.
@@ -321,15 +346,66 @@ const initPalette = function(id, defs) {
   const template = $('#node-template').children().first();
   let row = null;
   for (let i = 0; i < defs.length; i++) {
+    const def = defs[i];
+    let data = $(document.createElement('td'));
+    let node = template.clone();
+
+    // Add row break if needed.
     if (i % Consts.PALETTE === 0) {
       if (row !== null) {
         row.appendTo(table);
       }
       row = $(document.createElement('tr'));
     }
-    let data = $(document.createElement('td'));
-    let node = template.clone();
+
     // TODO: add functionality to node palette item
+    node.data('def', def);
+    switch (def.numInPorts) {
+      case 0:
+        node.find('.node-port-in-1').hide();
+        node.find('.node-port-in-2').hide();
+        node.find('.node-port-in-3').hide();
+        break;
+      case 1:
+        node.find('.node-port-in-1').hide();
+        node.find('.node-port-in-2').first().data('inPortId', 0);
+        node.find('.node-port-in-3').hide();
+        break;
+      case 2:
+        node.find('.node-port-in-1').first().data('inPortId', 0);
+        node.find('.node-port-in-2').hide();
+        node.find('.node-port-in-3').first().data('inPortId', 1);
+        break;
+      case 3:
+        node.find('.node-port-in-1').first().data('inPortId', 0);
+        node.find('.node-port-in-2').first().data('inPortId', 1);
+        node.find('.node-port-in-3').first().data('inPortId', 2);
+        break;
+    }
+    switch (def.numOutPorts) {
+      case 0:
+        node.find('.node-port-out-1').hide();
+        node.find('.node-port-out-2').hide();
+        node.find('.node-port-out-3').hide();
+        break;
+      case 1:
+        node.find('.node-port-out-1').hide();
+        node.find('.node-port-out-2').first().data('outPortId', 0);
+        node.find('.node-port-out-3').hide();
+        break;
+      case 2:
+        node.find('.node-port-out-1').first().data('outPortId', 0);
+        node.find('.node-port-out-2').hide();
+        node.find('.node-port-out-3').first().data('outPortId', 1);
+        break;
+      case 3:
+        node.find('.node-port-out-1').first().data('outPortId', 0);
+        node.find('.node-port-out-2').first().data('outPortId', 1);
+        node.find('.node-port-out-3').first().data('outPortId', 2);
+        break;
+    }
+    $(def.icon).children().clone().appendTo(node.find('.node-grabber'))
+
     node.appendTo(data);
     data.appendTo(row);
   }
@@ -341,33 +417,16 @@ const initPalette = function(id, defs) {
   }
 }
 
-$(document).ready(function() {
-  // Dynamically resize grid.
-  const square = $('#square');
-  grid.height(Consts.GRID * Consts.HEIGHT + 1);
-  square.attr('width', Consts.GRID);
-  square.attr('height', Consts.GRID);
-  square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
-  resizeHandler();
-
-  // TODO: Set up inputs palette.
-
-
-  // TODO: Set up logic gates palette.
-  initPalette('#gates-palette', [
-    1,
-    2,
-    3
-  ]);
-
-  // TODO: Set up outputs palette.
-
-});
-
-$(window).resize(resizeHandler);
+const removeNodeEle = function(ele) {
+  const nodeInfo = $(ele).data('nodeInfo');
+  if (typeof nodeInfo === 'undefined') {
+    ele.remove();
+  } else {
+    Simulation.removeNode(nodeInfo.nodeId);
+  }
+}
 
 interact('.node-grabber')
-  // .origin('#board')
   .draggable({
 
     // restrict: {
@@ -420,12 +479,18 @@ interact('.node-grabber')
       });
 
       // TODO: Detect if node should be deleted.
-
+      if (gridX < -Consts.NODE || gridY < -Consts.NODE) {
+        removeNodeEle(target);
+        return;
+      }
 
       // Otherwise find nearest free space for node.
       // If no free space can be found, delete the node.
       let freeSpace = findFreeSpace({ x: gridX, y: gridY });
-      // TODO: handle no free space
+      if (freeSpace === null) {
+        removeNodeEle(target);
+        return;
+      }
       gridX = freeSpace.x;
       gridY = freeSpace.y;
 
@@ -436,8 +501,9 @@ interact('.node-grabber')
       // Update nodeInfo, or create nodeInfo if new node was created.
       let nodeInfo = target.data('nodeInfo');
       if (typeof nodeInfo === 'undefined') {
-        nodeInfo = {};
-        // TODO: create node in simulation and nodeId
+        const def = target.data('def');
+        const nodeId = Simulation.addNode(def.numInPorts, def.numOutPorts, def.logic, target);
+        nodeInfo = { nodeId };
       }
       nodeInfo.gridX = gridX;
       nodeInfo.gridY = gridY;
@@ -458,7 +524,7 @@ interact('.node-grabber')
     if (interaction.pointerIsDown && !interaction.interacting()) {
       let target = $(event.currentTarget).parent();
       if (target.hasClass('node-palette')) {
-        const clone = target.clone();
+        const clone = target.clone(true);
         clone.removeClass('node-palette');
         // TODO: customise clone further
         clone.appendTo('#nodes');
@@ -520,3 +586,30 @@ interact('.node-port-out')
       }
     },
   });
+
+$(document).ready(function() {
+  // Dynamically resize grid.
+  const square = $('#square');
+  grid.height(Consts.GRID * Consts.HEIGHT + 1);
+  square.attr('width', Consts.GRID);
+  square.attr('height', Consts.GRID);
+  square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
+  resizeHandler();
+
+  // TODO: Set up inputs palette.
+
+
+  // Set up logic gates palette.
+  initPalette('#palette-gates', [
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or' },
+    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' },
+  ]);
+
+  // TODO: Set up outputs palette.
+  initPalette('#palette-outputs', [
+    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-and' },
+  ]);
+});
+
+$(window).resize(resizeHandler);

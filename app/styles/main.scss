@@ -26,7 +26,8 @@ $height: 20;
 }
 
 .node-dropzone {
-  fill: gray;
+  stroke: white;
+  stroke-width: 1px;
 }
 
 .link {
@@ -53,7 +54,8 @@ $height: 20;
 }
 
 #node-template,
-#link-template {
+#link-template,
+#icon-template {
   display: none;
 }
 
