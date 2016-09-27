@@ -5,7 +5,7 @@
 
 const Consts = {
   GRID: 20,
-  HEIGHT: 20,
+  HEIGHT: 29,
   NODE: 3,
   PALETTE: 4,
 };
@@ -25,7 +25,7 @@ let Simulation  = {
   links: [],
 
   // Adds a node of the given type and returns its id.
-  addNode(numInPorts, numOutPorts, logic, ele) {
+  addNode(numInPorts, numOutPorts, logic, elem) {
     let nodeId = this.nodes.length;
     let inPorts = [];
     let outPorts = [];
@@ -41,7 +41,7 @@ let Simulation  = {
       inPorts,
       outPorts,
       logic,
-      ele,
+      elem,
     };
     return nodeId;
   },
@@ -63,8 +63,10 @@ let Simulation  = {
         this.removeLink(outPort.linkId);
       }
     }
-    $(node.ele).remove();
     delete this.nodes[nodeId];
+
+    // Remove associated DOM element.
+    $(node.elem).remove();
   },
 
   // Returns whether two ports are allowed to link.
@@ -86,7 +88,7 @@ let Simulation  = {
   },
 
   // Adds a link between two ports.
-  addLink(outNodeId, outPortId, inNodeId, inPortId, ele) {
+  addLink(outNodeId, outPortId, inNodeId, inPortId, elem) {
     let linkId = this.links.length;
     this.links[linkId] = {
       linkId,
@@ -95,7 +97,7 @@ let Simulation  = {
       outPortId,
       inNodeId,
       inPortId,
-      ele,
+      elem,
     }
 
     let outPort = this.nodes[outNodeId].outPorts[outPortId];
@@ -121,8 +123,13 @@ let Simulation  = {
     let link = this.links[linkId];
     this.nodes[link.outNodeId].outPorts[link.outPortId].linkId = null;
     this.nodes[link.inNodeId].inPorts[link.inPortId].linkId = null;
-    $(link.ele).remove();
     delete this.links[linkId];
+
+    // Remove associated DOM element and metadata.
+    const linkInfo = $(link.elem).data('linkInfo');
+    linkInfo.inPortElem.removeData('linkId');
+    linkInfo.outPortElem.removeData('linkId');
+    $(link.elem).remove();
   },
 
   getNodeState(nodeId) {
@@ -217,6 +224,7 @@ USER INTERFACE
 const board = $('#board');
 const grid = $('#grid');
 const nodes = $('#nodes');
+const links = $('#links');
 let map = [[]];
 
 // // Print map to console for debugging purposes.
@@ -299,7 +307,6 @@ const resizeHandler = function() {
   const newGridWidth = Math.floor(grid.parent().width() / Consts.GRID);
   if (newGridWidth !== oldGridWidth) {
     // Resize internal map.
-    let oldMap = map;
     map = new Array(newGridWidth);
     for (let i = 0; i < newGridWidth; i++) {
       map[i] = new Array(Consts.HEIGHT);
@@ -331,7 +338,7 @@ const resizeHandler = function() {
       }
     }
     for (let node of nodesToDelete) {
-      removeNodeEle(node);
+      removeNodeElem(node);
     }
 
     // Resize visible grid UI.
@@ -417,13 +424,182 @@ const initPalette = function(id, defs) {
   }
 }
 
-const removeNodeEle = function(ele) {
-  const nodeInfo = $(ele).data('nodeInfo');
+const removeNodeElem = function(elem) {
+  const nodeInfo = $(elem).data('nodeInfo');
   if (typeof nodeInfo === 'undefined') {
-    ele.remove();
+    elem.remove();
   } else {
     Simulation.removeNode(nodeInfo.nodeId);
   }
+}
+
+const getPortCoords = function(elem) {
+  const node = elem.parent();
+  const def = node.data('def');
+  const nodeInfo = node.data('nodeInfo');
+  let result = {
+    x: nodeInfo.gridX,
+    y: nodeInfo.gridY,
+  }
+  if (elem.hasClass('node-port-in')) {
+    const inPortId = elem.data('inPortId');
+    switch (inPortId) {
+      case 0:
+        result.y += (def.numInPorts == 1) ? 1 : 0;
+        break;
+      case 1:
+        result.y += (def.numInPorts == 2) ? 2 : 1;
+        break;
+      case 2:
+        result.y += 2;
+        break;
+    }
+  } else {
+    const outPortId = elem.data('outPortId');
+    result.x += 2;
+    switch (outPortId) {
+      case 0:
+        result.y += (def.numOutPorts == 1) ? 1 : 0;
+        break;
+      case 1:
+        result.y += (def.numOutPorts == 2) ? 2 : 1;
+        break;
+      case 2:
+        result.y += 2;
+        break;
+    }
+  }
+  return result;
+}
+
+const isOpen = function(coords) {
+  if (coords.x < 0 || coords.y < 0) return false;
+  if (coords.x > map.length - 1) return false;
+  if (coords.y > map[coords.x].length - 1) return false;
+  return !map[coords.x][coords.y];
+}
+
+const toCoordsString = function(coords) {
+  return String(coords.x) + ',' + String(coords.y);
+}
+
+const toCoords = function(coordsString) {
+  const index = coordsString.indexOf(',');
+  return { x: Number(coordsString.slice(0, index)), y: Number(coordsString.slice(index + 1)) };
+}
+
+const equalCoords = function(a, b) {
+  return a.x === b.x && a.y === b.y;
+}
+
+const addToPath = function(coords, dict, heap, path, length, diagonal) {
+  if (isOpen(coords)) {
+    const coordsString = toCoordsString(coords);
+    const newLength = length + (diagonal ? 1.5 : 1);
+    let info = dict[coordsString];
+    if (typeof info === 'undefined') {
+      // This space has not been visited before.
+      info = {
+        coords,
+        path: [coords].concat(path),
+        length: newLength,
+      };
+      dict[coordsString] = info;
+      heap.push(info);
+    } else {
+      // Only overwrite path if new path is shorter.
+      if (newLength < info.length) {
+        info.path = [coords].concat(path);
+        info.length = newLength;
+      }
+    }
+  }
+}
+
+const findPath = function(inCoords, outCoords) {
+  const compare = (a, b) => a.length - b.length;
+  const startCoords = { x: inCoords.x - 1, y: inCoords.y };
+  const startCoordsString = toCoordsString(startCoords);
+  const endCoords = { x: outCoords.x + 1, y: outCoords.y };
+  let dict = {};
+  let heap = [];
+  let info = {
+    coords: startCoords,
+    path: [startCoords],
+    length: 1,
+  };
+  dict[startCoordsString] = info;
+  heap.push(info);
+  while (Object.keys(heap).length > 0) {
+    heap.sort(compare);
+
+    // Once a space is shifted from the heap, the path is guaranteed to be shortest.
+    const shortest = heap.shift();
+    if (equalCoords(shortest.coords, endCoords)) {
+      return [outCoords].concat(shortest.path).concat([inCoords]);
+    }
+
+    addToPath({ x: shortest.coords.x - 1, y: shortest.coords.y }, dict, heap,
+      shortest.path, shortest.length, false);
+    addToPath({ x: shortest.coords.x + 1, y: shortest.coords.y }, dict, heap,
+      shortest.path, shortest.length, false);
+    addToPath({ x: shortest.coords.x, y: shortest.coords.y - 1 }, dict, heap,
+      shortest.path, shortest.length, false);
+    addToPath({ x: shortest.coords.x, y: shortest.coords.y + 1 }, dict, heap,
+      shortest.path, shortest.length, false);
+    addToPath({ x: shortest.coords.x - 1, y: shortest.coords.y - 1 }, dict, heap,
+      shortest.path, shortest.length, true);
+    addToPath({ x: shortest.coords.x - 1, y: shortest.coords.y + 1 }, dict, heap,
+      shortest.path, shortest.length, true);
+    addToPath({ x: shortest.coords.x + 1, y: shortest.coords.y - 1 }, dict, heap,
+      shortest.path, shortest.length, true);
+    addToPath({ x: shortest.coords.x + 1, y: shortest.coords.y + 1 }, dict, heap,
+      shortest.path, shortest.length, true);
+  }
+  // ASSERT: A path should always be findable.
+  return null;
+}
+
+const toPoints = function(path) {
+  let result = '';
+  for (let coords of path) {
+    const x = (coords.x * Consts.GRID) + (Consts.GRID / 2);
+    const y = (coords.y * Consts.GRID) + (Consts.GRID / 2);
+    result += toCoordsString({ x, y }) + ' ';
+  }
+  return result.slice(0, -1);
+}
+
+const addLinkElem = function(inPortElem, outPortElem) {
+  // Remove any existing links first.
+  const inPortLinkId = inPortElem.data('linkId');
+  if (typeof inPortLinkId !== 'undefined') {
+    Simulation.removeLink(inPortLinkId);
+  }
+  const outPortLinkId = outPortElem.data('linkId');
+  if (typeof outPortLinkId !== 'undefined') {
+    Simulation.removeLink(outPortLinkId);
+  }
+
+  const inPortCoords = getPortCoords(inPortElem);
+  const inPortId = inPortElem.data('inPortId');
+  const inNodeId = inPortElem.parent().data('nodeInfo').nodeId;
+  const outPortCoords = getPortCoords(outPortElem);
+  const outPortId = outPortElem.data('outPortId');
+  const outNodeId = outPortElem.parent().data('nodeInfo').nodeId;
+  const path = findPath(inPortCoords, outPortCoords);
+  const link = $('#link-template').children().first().clone();
+  link.children().first().attr('points', toPoints(path));
+  link.appendTo(links);
+  link.offset(grid.offset());
+  const linkId = Simulation.addLink(outNodeId, outPortId, inNodeId, inPortId, link);
+  link.data('linkInfo', {
+    linkId,
+    inPortElem,
+    outPortElem,
+  });
+  inPortElem.data('linkId', linkId);
+  outPortElem.data('linkId', linkId);
 }
 
 interact('.node-grabber')
@@ -478,9 +654,10 @@ interact('.node-grabber')
         y: event.pageY - Consts.NODE / 2 * Consts.GRID
       });
 
-      // TODO: Detect if node should be deleted.
-      if (gridX < -Consts.NODE || gridY < -Consts.NODE) {
-        removeNodeEle(target);
+      // Delete the node if it is dropped too far away from the grid.
+      if (gridX < -Consts.NODE || gridY < -Consts.NODE ||
+        gridX > map.length + Consts.NODE || gridY > Consts.HEIGHT + Consts.NODE) {
+        removeNodeElem(target);
         return;
       }
 
@@ -488,7 +665,7 @@ interact('.node-grabber')
       // If no free space can be found, delete the node.
       let freeSpace = findFreeSpace({ x: gridX, y: gridY });
       if (freeSpace === null) {
-        removeNodeEle(target);
+        removeNodeElem(target);
         return;
       }
       gridX = freeSpace.x;
@@ -513,6 +690,25 @@ interact('.node-grabber')
       for (let i = 0; i < Consts.NODE; i++) {
         for (let j = 0; j < Consts.NODE; j++) {
           map[gridX + i][gridY + j] = true;
+        }
+      }
+
+      // Redraw links if needed.
+      const node = Simulation.getNode(nodeInfo.nodeId);
+      for (let inPort of node.inPorts) {
+        if (inPort.linkId !== null) {
+          const link = Simulation.getLink(inPort.linkId).elem;
+          const linkInfo = link.data('linkInfo');
+          const path = findPath(getPortCoords(linkInfo.inPortElem), getPortCoords(linkInfo.outPortElem));
+          link.children().first().attr('points', toPoints(path));
+        }
+      }
+      for (let outPort of node.outPorts) {
+        if (outPort.linkId !== null) {
+          const link = Simulation.getLink(outPort.linkId).elem;
+          const linkInfo = link.data('linkInfo');
+          const path = findPath(getPortCoords(linkInfo.inPortElem), getPortCoords(linkInfo.outPortElem));
+          link.children().first().attr('points', toPoints(path));
         }
       }
     }
@@ -560,6 +756,11 @@ interact('#nodes .node-port-in')
         target.removeClass('node-dropzone');
       }
     },
+    ondrop(event) {
+      const inPortElem = $(event.target);
+      const outPortElem = $(event.relatedTarget);
+      addLinkElem(inPortElem, outPortElem);
+    }
   });
 
 interact('#nodes .node-port-out')
@@ -585,6 +786,11 @@ interact('#nodes .node-port-out')
         target.removeClass('node-dropzone');
       }
     },
+    ondrop(event) {
+      const inPortElem = $(event.relatedTarget);
+      const outPortElem = $(event.target);
+      addLinkElem(inPortElem, outPortElem);
+    }
   });
 
 $(document).ready(function() {
@@ -597,13 +803,20 @@ $(document).ready(function() {
   resizeHandler();
 
   // TODO: Set up inputs palette.
-
+  initPalette('#palette-inputs', [
+    { numInPorts: 0, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-and' },
+  ]);
 
   // Set up logic gates palette.
   initPalette('#palette-gates', [
     { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and' },
     { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or' },
     { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' },
+  ]);
+
+  // Set up passive palette.
+  initPalette('#palette-passive', [
+    { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive' },
   ]);
 
   // TODO: Set up outputs palette.

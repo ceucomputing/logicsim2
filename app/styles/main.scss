@@ -1,7 +1,7 @@
 $icon-font-path: '../fonts/';
 $grid: 20px;
 $node: 3;
-$height: 20;
+$height: 29;
 
 // bower:scss
 @import "bower_components/bootstrap-sass/assets/stylesheets/_bootstrap.scss";
@@ -26,8 +26,7 @@ $height: 20;
 }
 
 .node-dropzone {
-  stroke: white;
-  stroke-width: 1px;
+  fill: rgb(120, 0, 0);
 }
 
 .link {
@@ -38,6 +37,10 @@ $height: 20;
 
 .link polyline {
   stroke-linejoin: round;
+}
+
+.link-active {
+  stroke: orange;
 }
 
 .palette {
