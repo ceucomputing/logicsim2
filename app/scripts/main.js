@@ -6,7 +6,7 @@
 const Consts = {
   GRID: 20,
   HEIGHT: 20,
-  NODE: 5,
+  NODE: 3,
   PALETTE: 4,
 };
 
@@ -537,7 +537,7 @@ interact('.node-grabber')
     }
   });
 
-interact('.node-port-in')
+interact('#nodes .node-port-in')
   .draggable({
     onstart(event) {
       $(event.target).addClass('node-dragging');
@@ -562,7 +562,7 @@ interact('.node-port-in')
     },
   });
 
-interact('.node-port-out')
+interact('#nodes .node-port-out')
   .draggable({
     onstart(event) {
       $(event.target).addClass('node-dragging');
