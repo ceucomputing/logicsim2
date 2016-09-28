@@ -146,16 +146,22 @@ let Simulation  = {
 
     // Reset all states.
     for (let node of this.nodes) {
-      node.state = null;
+      if (typeof node !== 'undefined') {
+        node.state = null;
+      }
     }
     for (let link of this.links) {
-      link.state = null;
+      if (typeof link !== 'undefined') {
+        link.state = null;
+      }
     }
 
     // Populate seed nodes.
     for (let node of this.nodes) {
-      if (node.inPorts.length === 0) {
-        queue.push(node.nodeId);
+      if (typeof node !== 'undefined') {
+        if (node.inPorts.length === 0) {
+          queue.push(node.nodeId);
+        }
       }
     }
 
@@ -211,35 +217,10 @@ USER INTERFACE
 ================================================================================
 */
 
-// const main = function() {
-//   let id = Simulation.addNode(0, 1, () => true);
-//   let id2 = Simulation.addNode(1, 1, () => true);
-//   let id3 = Simulation.addNode(1, 0, () => true);
-//   Simulation.addLink(id, 0, id2, 0);
-//   Simulation.addLink(id2, 0, id3, 0);
-//   Simulation.update();
-//   Simulation.removeNode(id);
-// }
-
-const board = $('#board');
 const grid = $('#grid');
 const nodes = $('#nodes');
 const links = $('#links');
 let map = [[]];
-
-// // Print map to console for debugging purposes.
-// const printMap = function() {
-//   const strings = new Array(Consts.HEIGHT);
-//   for (let i = 0; i < strings.length; i++) {
-//     strings[i] = '';
-//   }
-//   for (let column of map) {
-//     for (let i = 0; i < strings.length; i++) {
-//       strings[i] += column[i] ? "*" : ".";
-//     }
-//   }
-//   console.log(strings.join('\n'));
-// }
 
 // Convert coordinates from page-space (pixels) to grid-space (squares).
 const toGrid = function(coords) {
@@ -317,7 +298,7 @@ const resizeHandler = function() {
 
     // Initialise new map.
     let nodesToDelete = [];
-    for (let node of $('#nodes').children()) {
+    for (let node of nodes.children()) {
       const n = $(node);
       let nodeInfo = n.data('nodeInfo');
       let freeSpace = findFreeSpace({ x: nodeInfo.gridX, y: nodeInfo.gridY });
@@ -345,6 +326,9 @@ const resizeHandler = function() {
     const newWidth = newGridWidth * Consts.GRID + 1;
     grid.width(newWidth);
     $('.link').width(newWidth);
+
+    // Redraw links.
+    redrawLinks();
   }
 }
 
@@ -411,13 +395,13 @@ const initPalette = function(id, defs) {
         node.find('.node-port-out-3').first().data('outPortId', 2);
         break;
     }
-    $(def.icon).children().clone().appendTo(node.find('.node-grabber'))
+    $(def.icon).children().clone(true).appendTo(node.find('.node-grabber'))
 
     node.appendTo(data);
     data.appendTo(row);
   }
   if (row !== null) {
-    for (let i = 0; i < Consts.PALETTE - row.children().length; i++) {
+    for (let i = 0; i < Consts.PALETTE - defs.length % Consts.PALETTE; i++) {
       $(document.createElement('td')).appendTo(row);
     }
     row.appendTo(table);
@@ -481,11 +465,6 @@ const isOpen = function(coords) {
 
 const toCoordsString = function(coords) {
   return String(coords.x) + ',' + String(coords.y);
-}
-
-const toCoords = function(coordsString) {
-  const index = coordsString.indexOf(',');
-  return { x: Number(coordsString.slice(0, index)), y: Number(coordsString.slice(index + 1)) };
 }
 
 const equalCoords = function(a, b) {
@@ -602,14 +581,43 @@ const addLinkElem = function(inPortElem, outPortElem) {
   outPortElem.data('linkId', linkId);
 }
 
+const redrawLinks = function() {
+  for (let link of links.children()) {
+    const linkInfo = $(link).data('linkInfo');
+    const path = findPath(getPortCoords(linkInfo.inPortElem),
+      getPortCoords(linkInfo.outPortElem));
+    $(link).children().first().attr('points', toPoints(path));
+  }
+}
+
+const updateState = function() {
+  Simulation.update();
+  for (let node of nodes.children()) {
+    const n = $(node);
+    const state = Simulation.getNodeState(n.data('nodeInfo').nodeId);
+    if (state === null) {
+      n.removeClass('node-active');
+    } else if (state) {
+      n.addClass('node-active');
+    } else {
+      n.removeClass('node-active');
+    }
+  }
+  for (let link of links.children()) {
+    const l = $(link);
+    const state = Simulation.getLinkState(l.data('linkInfo').linkId);
+    if (state === null) {
+      l.removeClass('link-active');
+    } else if (state) {
+      l.addClass('link-active');
+    } else {
+      l.removeClass('link-active');
+    }
+  }
+}
+
 interact('.node-grabber')
   .draggable({
-
-    // restrict: {
-    //   restriction: grid,
-    //   endOnly: true,
-    //   elementRect: { left: 0, right: 1, top: 0, bottom: 1 }
-    // },
 
     manualStart: true,
 
@@ -658,6 +666,7 @@ interact('.node-grabber')
       if (gridX < -Consts.NODE || gridY < -Consts.NODE ||
         gridX > map.length + Consts.NODE || gridY > Consts.HEIGHT + Consts.NODE) {
         removeNodeElem(target);
+        updateState();
         return;
       }
 
@@ -666,6 +675,7 @@ interact('.node-grabber')
       let freeSpace = findFreeSpace({ x: gridX, y: gridY });
       if (freeSpace === null) {
         removeNodeElem(target);
+        updateState();
         return;
       }
       gridX = freeSpace.x;
@@ -693,24 +703,11 @@ interact('.node-grabber')
         }
       }
 
-      // Redraw links if needed.
-      const node = Simulation.getNode(nodeInfo.nodeId);
-      for (let inPort of node.inPorts) {
-        if (inPort.linkId !== null) {
-          const link = Simulation.getLink(inPort.linkId).elem;
-          const linkInfo = link.data('linkInfo');
-          const path = findPath(getPortCoords(linkInfo.inPortElem), getPortCoords(linkInfo.outPortElem));
-          link.children().first().attr('points', toPoints(path));
-        }
-      }
-      for (let outPort of node.outPorts) {
-        if (outPort.linkId !== null) {
-          const link = Simulation.getLink(outPort.linkId).elem;
-          const linkInfo = link.data('linkInfo');
-          const path = findPath(getPortCoords(linkInfo.inPortElem), getPortCoords(linkInfo.outPortElem));
-          link.children().first().attr('points', toPoints(path));
-        }
-      }
+      // Redraw links.
+      redrawLinks();
+
+      // Update state before leaving handler.
+      updateState();
     }
 
   })
@@ -760,6 +757,7 @@ interact('#nodes .node-port-in')
       const inPortElem = $(event.target);
       const outPortElem = $(event.relatedTarget);
       addLinkElem(inPortElem, outPortElem);
+      updateState();
     }
   });
 
@@ -790,6 +788,7 @@ interact('#nodes .node-port-out')
       const inPortElem = $(event.relatedTarget);
       const outPortElem = $(event.target);
       addLinkElem(inPortElem, outPortElem);
+      updateState();
     }
   });
 
@@ -802,9 +801,19 @@ $(document).ready(function() {
   square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
   resizeHandler();
 
-  // TODO: Set up inputs palette.
+  $('.icon-input-button').click(function() {
+    const node = $(this).parent().parent();
+    if (!node.hasClass('node-palette')) {
+      const newResult = !node.hasClass('node-active');
+      const simNode = Simulation.getNode(node.data('nodeInfo').nodeId);
+      simNode.logic = () => newResult;
+      updateState();
+    }
+  });
+
+  // Set up inputs palette.
   initPalette('#palette-inputs', [
-    { numInPorts: 0, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-and' },
+    { numInPorts: 0, numOutPorts: 3, logic: () => false, icon: '#icon-input' },
   ]);
 
   // Set up logic gates palette.
@@ -819,9 +828,10 @@ $(document).ready(function() {
     { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive' },
   ]);
 
-  // TODO: Set up outputs palette.
+  // Set up outputs palette.
   initPalette('#palette-outputs', [
-    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-and' },
+    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-lamp' },
+    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-fan' },
   ]);
 });
 

@@ -29,36 +29,59 @@ $height: 29;
   fill: rgb(120, 0, 0);
 }
 
+  .node-active rect {
+    fill: orange;
+  }
+
+  .node-active .icon-output-lamp-circle,
+  .node-active .icon-input-circle {
+    fill: red;
+  }
+
+  .node-active .icon-output-fan-path {
+    animation: spin 4s linear infinite;
+    transform-origin: 30px 30px;
+  }
+
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+
+.icon-input-button {
+  transform-origin: 30px 50px;
+  cursor: pointer;
+}
+
+.icon-input-button:hover {
+  fill: red;
+}
+
 .link {
   height: $height * $grid;
   position: absolute;
   z-index: 1;
 }
 
-.link polyline {
-  stroke-linejoin: round;
-}
+  .link polyline {
+    stroke-linejoin: round;
+  }
 
-.link-active {
-  stroke: orange;
-}
+  .link-active polyline {
+    stroke: orange;
+  }
 
 .palette {
   width: 100%;
 }
 
-.palette col {
-  width: 25%;
-}
+  .palette col {
+    width: 25%;
+  }
 
-.palette td {
-  height: $node * $grid;
-  vertical-align: top;
-}
+  .palette td {
+    height: $node * $grid;
+    vertical-align: top;
+  }
 
-#node-template,
-#link-template,
-#icon-template {
+#templates {
   display: none;
 }
 
