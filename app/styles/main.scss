@@ -29,13 +29,17 @@ $height: 29;
   fill: rgb(120, 0, 0);
 }
 
+  .node-inactive rect {
+    fill: red;
+  }
+
   .node-active rect {
-    fill: orange;
+    fill: green;
   }
 
   .node-active .icon-output-lamp-circle,
   .node-active .icon-input-circle {
-    fill: red;
+    fill: lime;
   }
 
   .node-active .icon-output-fan-path {
@@ -50,10 +54,6 @@ $height: 29;
   cursor: pointer;
 }
 
-.icon-input-button:hover {
-  fill: red;
-}
-
 .link {
   height: $height * $grid;
   position: absolute;
@@ -64,8 +64,12 @@ $height: 29;
     stroke-linejoin: round;
   }
 
+  .link-inactive polyline {
+    stroke: red;
+  }
+
   .link-active polyline {
-    stroke: orange;
+    stroke: green;
   }
 
 .palette {

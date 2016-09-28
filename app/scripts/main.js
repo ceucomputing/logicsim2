@@ -7,7 +7,7 @@ const Consts = {
   GRID: 20,
   HEIGHT: 29,
   NODE: 3,
-  PALETTE: 4,
+  PALETTE: 4
 };
 
 /*
@@ -41,7 +41,7 @@ let Simulation  = {
       inPorts,
       outPorts,
       logic,
-      elem,
+      elem
     };
     return nodeId;
   },
@@ -71,19 +71,47 @@ let Simulation  = {
 
   // Returns whether two ports are allowed to link.
   canLink(outNodeId, outPortId, inNodeId, inPortId) {
-    let queue = [];
-    // let visited = [];
+    let queue = [inNodeId];
+    let visited = [];
+    let linksToIgnore = [];
 
-    // Populate seed nodes.
-    for (let port of this.nodes[inNodeId].outPorts) {
-      if (port.linkId === null) {
-        continue;
-      }
-      let link = this.links[port.linkId];
-      queue.push(link.inPortId);
+    // Check if ports already have any links present.
+    // If so, add them to a list of links to ignore, since these
+    // links will be broken if the proposed link is formed.
+    const oldOutLinkId = this.nodes[outNodeId].outPorts[outPortId];
+    if (oldOutLinkId !== null) {
+      linksToIgnore.push(oldOutLinkId);
+    }
+    const oldInLinkId = this.nodes[inNodeId].inPorts[inPortId];
+    if (oldInLinkId !== null) {
+      linksToIgnore.push(oldInLinkId);
     }
 
-    // TODO
+    // Process until queue is empty.
+    while (queue.length > 0) {
+      const node = this.nodes[queue.pop()];
+
+      // If we manage to reach the other node, the proposed link will form a loop,
+      // so we reject proposed link.
+      if (node.nodeId === outNodeId) {
+        return false;
+      }
+
+      // Follow all links (except ignored ones).
+      for (let port of node.outPorts) {
+        if (port.linkId === null || linksToIgnore.indexOf(port.linkId) !== -1) {
+          continue;
+        }
+        const link = this.links[port.linkId];
+        const candidate = this.nodes[link.inNodeId];
+        if (visited.indexOf(candidate.nodeId) === -1) {
+          queue.push(candidate.nodeId);
+        }
+      }
+
+      visited.push(node.nodeId);
+    }
+
     return true;
   },
 
@@ -97,7 +125,7 @@ let Simulation  = {
       outPortId,
       inNodeId,
       inPortId,
-      elem,
+      elem
     }
 
     let outPort = this.nodes[outNodeId].outPorts[outPortId];
@@ -227,7 +255,7 @@ const toGrid = function(coords) {
   const offset = grid.offset();
   return {
     x: Math.round((coords.x - offset.left) / Consts.GRID),
-    y: Math.round((coords.y - offset.top) / Consts.GRID),
+    y: Math.round((coords.y - offset.top) / Consts.GRID)
   };
 }
 
@@ -236,7 +264,7 @@ const toPage = function(coords) {
   const offset = grid.offset();
   return {
     x: offset.left + coords.x * Consts.GRID,
-    y: offset.top + coords.y * Consts.GRID,
+    y: offset.top + coords.y * Consts.GRID
   };
 }
 
@@ -423,7 +451,7 @@ const getPortCoords = function(elem) {
   const nodeInfo = node.data('nodeInfo');
   let result = {
     x: nodeInfo.gridX,
-    y: nodeInfo.gridY,
+    y: nodeInfo.gridY
   }
   if (elem.hasClass('node-port-in')) {
     const inPortId = elem.data('inPortId');
@@ -481,7 +509,7 @@ const addToPath = function(coords, dict, heap, path, length, diagonal) {
       info = {
         coords,
         path: [coords].concat(path),
-        length: newLength,
+        length: newLength
       };
       dict[coordsString] = info;
       heap.push(info);
@@ -505,7 +533,7 @@ const findPath = function(inCoords, outCoords) {
   let info = {
     coords: startCoords,
     path: [startCoords],
-    length: 1,
+    length: 1
   };
   dict[startCoordsString] = info;
   heap.push(info);
@@ -550,7 +578,16 @@ const toPoints = function(path) {
 }
 
 const addLinkElem = function(inPortElem, outPortElem) {
-  // Remove any existing links first.
+  // Check if a link is allowed first.
+  const inPortId = inPortElem.data('inPortId');
+  const inNodeId = inPortElem.parent().data('nodeInfo').nodeId;
+  const outPortId = outPortElem.data('outPortId');
+  const outNodeId = outPortElem.parent().data('nodeInfo').nodeId;
+  if (!Simulation.canLink(outNodeId, outPortId, inNodeId, inPortId)) {
+    return;
+  }
+
+  // Remove any existing links.
   const inPortLinkId = inPortElem.data('linkId');
   if (typeof inPortLinkId !== 'undefined') {
     Simulation.removeLink(inPortLinkId);
@@ -560,12 +597,9 @@ const addLinkElem = function(inPortElem, outPortElem) {
     Simulation.removeLink(outPortLinkId);
   }
 
+  // Create link.
   const inPortCoords = getPortCoords(inPortElem);
-  const inPortId = inPortElem.data('inPortId');
-  const inNodeId = inPortElem.parent().data('nodeInfo').nodeId;
   const outPortCoords = getPortCoords(outPortElem);
-  const outPortId = outPortElem.data('outPortId');
-  const outNodeId = outPortElem.parent().data('nodeInfo').nodeId;
   const path = findPath(inPortCoords, outPortCoords);
   const link = $('#link-template').children().first().clone();
   link.children().first().attr('points', toPoints(path));
@@ -575,7 +609,7 @@ const addLinkElem = function(inPortElem, outPortElem) {
   link.data('linkInfo', {
     linkId,
     inPortElem,
-    outPortElem,
+    outPortElem
   });
   inPortElem.data('linkId', linkId);
   outPortElem.data('linkId', linkId);
@@ -597,10 +631,13 @@ const updateState = function() {
     const state = Simulation.getNodeState(n.data('nodeInfo').nodeId);
     if (state === null) {
       n.removeClass('node-active');
+      n.removeClass('node-inactive');
     } else if (state) {
       n.addClass('node-active');
+      n.removeClass('node-inactive');
     } else {
       n.removeClass('node-active');
+      n.addClass('node-inactive');
     }
   }
   for (let link of links.children()) {
@@ -608,10 +645,13 @@ const updateState = function() {
     const state = Simulation.getLinkState(l.data('linkInfo').linkId);
     if (state === null) {
       l.removeClass('link-active');
+      l.removeClass('link-inactive');
     } else if (state) {
       l.addClass('link-active');
+      l.removeClass('link-inactive');
     } else {
       l.removeClass('link-active');
+      l.addClass('link-inactive');
     }
   }
 }
@@ -632,7 +672,7 @@ interact('.node-grabber')
           newCoords.y += Consts.NODE / 2 * Consts.GRID;
           return newCoords;
         }
-      ],
+      ]
     },
 
     onmove(event) {
@@ -813,25 +853,25 @@ $(document).ready(function() {
 
   // Set up inputs palette.
   initPalette('#palette-inputs', [
-    { numInPorts: 0, numOutPorts: 3, logic: () => false, icon: '#icon-input' },
+    { numInPorts: 0, numOutPorts: 3, logic: () => false, icon: '#icon-input' }
   ]);
 
   // Set up logic gates palette.
   initPalette('#palette-gates', [
     { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and' },
     { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or' },
-    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' },
+    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' }
   ]);
 
   // Set up passive palette.
   initPalette('#palette-passive', [
-    { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive' },
+    { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive' }
   ]);
 
   // Set up outputs palette.
   initPalette('#palette-outputs', [
     { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-lamp' },
-    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-fan' },
+    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-fan' }
   ]);
 });
 
