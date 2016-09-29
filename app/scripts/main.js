@@ -5,9 +5,9 @@
 
 const Consts = {
   GRID: 20,
-  HEIGHT: 29,
+  HEIGHT: 33,
   NODE: 3,
-  PALETTE: 4
+  PALETTE: 3,
 };
 
 /*
@@ -903,7 +903,9 @@ $(document).ready(function() {
   initPalette('#palette-gates', [
     { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and' },
     { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or' },
-    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' }
+    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] && inputs[1]), icon: '#icon-nand' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] || inputs[1]), icon: '#icon-nor' },
   ]);
 
   // Set up passive palette.

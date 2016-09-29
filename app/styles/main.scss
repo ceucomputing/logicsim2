@@ -1,7 +1,7 @@
 $icon-font-path: '../fonts/';
 $grid: 20px;
 $node: 3;
-$height: 29;
+$height: 33;
 $port-highlight: rgb(0, 128, 0);
 $inactive: url(#inactive);
 $active: rgb(128, 255, 128);
@@ -80,12 +80,20 @@ $active: rgb(128, 255, 128);
 }
 
   .palette col {
-    width: 25%;
+    width: 33.3%;
+  }
+
+  .palette table {
+    margin-bottom: -$node * $grid;
   }
 
   .palette td {
-    height: $node * $grid;
+    height: ($node + 1) * $grid;
     vertical-align: top;
+  }
+
+  .palette tr:last-child td {
+    height: $node * $grid;
   }
 
 #templates {
