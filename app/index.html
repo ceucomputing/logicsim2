@@ -119,7 +119,7 @@
             <div id="icon-template">
               <svg id="icon-input">
                  <circle class="icon-input-circle" cx="30" cy="25" r="15" fill="black" stroke="black" stroke-width="3" />
-                 <path class="icon-input-button" d="m 10,45 40,0 0,10 -40,0 z" fill="white" stroke="black" stroke-width="1" />
+                 <path class="icon-input-button" d="m 15,45 30,0 0,10 -30,0 z" fill="white" stroke="black" stroke-width="1" />
               </svg>
               <svg id="icon-and">
                  <path d="m 15,15 0,30 15,0 c 0,0 15,0 15,-15 0,-15 -15,-15 -15,-15 z" fill="white" stroke="black" stroke-width="3" />
@@ -132,6 +132,10 @@
                  <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
               </svg>
               <svg id="icon-passive">
+                <g>
+                  <path d="m 0,30 60,0" fill="white" stroke="black" stroke-width="3" />
+                  <path d="m 60,10 -30,0 0,40 30,0" fill="none" stroke="black" stroke-width="3" />
+                </g>
               </svg>
               <svg id="icon-output-lamp">
                 <circle class="icon-output-lamp-circle" cx="30" cy="30" r="15" fill="black" stroke="black" stroke-width="3" />
@@ -158,6 +162,12 @@
               <pattern id="square" patternUnits="userSpaceOnUse">
                 <path fill="none" stroke="gray" stroke-width="1" />
               </pattern>
+              <pattern id="inactive" patternUnits="userSpaceOnUse" width="20" height="20">
+                <rect width="100%" height="100%" fill="red" />
+                <path d="m 40,-20 -60,60" fill="none" stroke="rgb(192, 0, 0)" stroke-width="10" />
+                <path d="m 40,-40 -60,60" fill="none" stroke="rgb(192, 0, 0)" stroke-width="10" />
+                <path d="m 40,0 -60,60" fill="none" stroke="rgb(192, 0, 0)" stroke-width="10" />
+              </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#square)" />
           </svg>
@@ -167,6 +177,10 @@
 
           <div id="links">
           </div>
+
+          <svg id="temp">
+            <line id="temp-line" fill="transparent" stroke="silver" stroke-width="5" filter="url(#drop-shadow)" />
+          </svg>
 
         </div>
       </div>

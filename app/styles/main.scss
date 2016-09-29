@@ -2,6 +2,9 @@ $icon-font-path: '../fonts/';
 $grid: 20px;
 $node: 3;
 $height: 29;
+$port-highlight: rgb(0, 128, 0);
+$inactive: url(#inactive);
+$active: rgb(128, 255, 128);
 
 // bower:scss
 @import "bower_components/bootstrap-sass/assets/stylesheets/_bootstrap.scss";
@@ -22,19 +25,19 @@ $height: 29;
 }
 
 .node-dragging {
-  fill: red;
+  fill: $port-highlight;
 }
 
 .node-dropzone {
-  fill: rgb(120, 0, 0);
+  fill: $port-highlight;
 }
 
   .node-inactive rect {
-    fill: red;
+    fill: $inactive;
   }
 
   .node-active rect {
-    fill: green;
+    fill: $active;
   }
 
   .node-active .icon-output-lamp-circle,
@@ -43,7 +46,7 @@ $height: 29;
   }
 
   .node-active .icon-output-fan-path {
-    animation: spin 4s linear infinite;
+    animation: spin 1s linear infinite;
     transform-origin: 30px 30px;
   }
 
@@ -65,11 +68,11 @@ $height: 29;
   }
 
   .link-inactive polyline {
-    stroke: red;
+    stroke: $inactive;
   }
 
   .link-active polyline {
-    stroke: green;
+    stroke: $active;
   }
 
 .palette {
@@ -87,6 +90,12 @@ $height: 29;
 
 #templates {
   display: none;
+}
+
+#temp {
+  height: $height * $grid;
+  position: absolute;
+  z-index: 1;
 }
 
 body {

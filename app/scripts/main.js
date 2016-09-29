@@ -248,6 +248,8 @@ USER INTERFACE
 const grid = $('#grid');
 const nodes = $('#nodes');
 const links = $('#links');
+const temp = $('#temp');
+const tempLine = $('#temp-line');
 let map = [[]];
 
 // Convert coordinates from page-space (pixels) to grid-space (squares).
@@ -354,6 +356,7 @@ const resizeHandler = function() {
     const newWidth = newGridWidth * Consts.GRID + 1;
     grid.width(newWidth);
     $('.link').width(newWidth);
+    temp.width(newWidth);
 
     // Redraw links.
     redrawLinks();
@@ -656,6 +659,15 @@ const updateState = function() {
   }
 }
 
+const positionTempLine = function(portElem, pageX, pageY) {
+  const offset = grid.offset();
+  const portCoords = toPage(getPortCoords($(portElem)));
+  tempLine.attr('x1', portCoords.x + Consts.GRID / 2 - offset.left);
+  tempLine.attr('y1', portCoords.y + Consts.GRID / 2 - offset.top);
+  tempLine.attr('x2', pageX - offset.left);
+  tempLine.attr('y2', pageY - offset.top);
+}
+
 interact('.node-grabber')
   .draggable({
 
@@ -773,10 +785,23 @@ interact('.node-grabber')
 interact('#nodes .node-port-in')
   .draggable({
     onstart(event) {
+      temp.show();
       $(event.target).addClass('node-dragging');
     },
     onend(event) {
-      $(event.target).removeClass('node-dragging');
+      const target = $(event.target);
+      temp.hide();
+      target.removeClass('node-dragging');
+      if (typeof event.dropzone === 'undefined') {
+        const linkId = target.data('linkId');
+        if (typeof linkId !== 'undefined' && linkId !== null) {
+          Simulation.removeLink(linkId);
+          updateState();
+        }
+      }
+    },
+    onmove(event) {
+      positionTempLine(event.target, event.pageX, event.pageY);
     }
   })
   .dropzone({
@@ -804,10 +829,23 @@ interact('#nodes .node-port-in')
 interact('#nodes .node-port-out')
   .draggable({
     onstart(event) {
+      temp.show();
       $(event.target).addClass('node-dragging');
     },
     onend(event) {
-      $(event.target).removeClass('node-dragging');
+      const target = $(event.target);
+      temp.hide();
+      target.removeClass('node-dragging');
+      if (typeof event.dropzone === 'undefined') {
+        const linkId = target.data('linkId');
+        if (typeof linkId !== 'undefined' && linkId !== null) {
+          Simulation.removeLink(linkId);
+          updateState();
+        }
+      }
+    },
+    onmove(event) {
+      positionTempLine(event.target, event.pageX, event.pageY);
     }
   })
   .dropzone({
@@ -839,6 +877,11 @@ $(document).ready(function() {
   square.attr('width', Consts.GRID);
   square.attr('height', Consts.GRID);
   square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
+
+  // Hide placeholder link used for UI.
+  //temp.hide();
+  temp.offset(grid.offset());
+
   resizeHandler();
 
   $('.icon-input-button').click(function() {
@@ -853,7 +896,7 @@ $(document).ready(function() {
 
   // Set up inputs palette.
   initPalette('#palette-inputs', [
-    { numInPorts: 0, numOutPorts: 3, logic: () => false, icon: '#icon-input' }
+    { numInPorts: 0, numOutPorts: 1, logic: () => false, icon: '#icon-input' }
   ]);
 
   // Set up logic gates palette.
