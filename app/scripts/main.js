@@ -53,16 +53,16 @@ let Simulation  = {
   // Removes a node.
   removeNode(nodeId) {
     let node = this.nodes[nodeId];
-    for (let inPort of node.inPorts) {
+    $.each(node.inPorts, (function(key, inPort) {
       if (inPort.linkId !== null) {
         this.removeLink(inPort.linkId);
       }
-    }
-    for (let outPort of node.outPorts) {
+    }).bind(this));
+    $.each(node.outPorts, (function(key, outPort) {
       if (outPort.linkId !== null) {
         this.removeLink(outPort.linkId);
       }
-    }
+    }).bind(this));
     delete this.nodes[nodeId];
 
     // Remove associated DOM element.
@@ -98,16 +98,16 @@ let Simulation  = {
       }
 
       // Follow all links (except ignored ones).
-      for (let port of node.outPorts) {
+      $.each(node.outPorts, (function(key, port) {
         if (port.linkId === null || linksToIgnore.indexOf(port.linkId) !== -1) {
-          continue;
+          return;
         }
         const link = this.links[port.linkId];
         const candidate = this.nodes[link.inNodeId];
         if (visited.indexOf(candidate.nodeId) === -1) {
           queue.push(candidate.nodeId);
         }
-      }
+      }).bind(this));
 
       visited.push(node.nodeId);
     }
@@ -173,25 +173,25 @@ let Simulation  = {
     let visited = [];
 
     // Reset all states.
-    for (let node of this.nodes) {
+    $.each(this.nodes, (function(key, node) {
       if (typeof node !== 'undefined') {
         node.state = null;
       }
-    }
-    for (let link of this.links) {
+    }).bind(this));
+    $.each(this.links, (function(key, link) {
       if (typeof link !== 'undefined') {
         link.state = null;
       }
-    }
+    }).bind(this));
 
     // Populate seed nodes.
-    for (let node of this.nodes) {
+    $.each(this.nodes, (function(key, node) {
       if (typeof node !== 'undefined') {
         if (node.inPorts.length === 0) {
           queue.push(node.nodeId);
         }
       }
-    }
+    }).bind(this));
 
     // Process until queue is empty.
     while (queue.length > 0) {
@@ -199,38 +199,38 @@ let Simulation  = {
       let inputs = [];
 
       // Collate inputs.
-      for (let port of node.inPorts) {
+      $.each(node.inPorts, (function(key, port) {
         inputs.push(this.links[port.linkId].state);
-      }
+      }).bind(this));
 
       // Update state.
       node.state = node.logic(inputs);
 
       // Propagate outputs and push completed nodes to queue.
-      for (let port of node.outPorts) {
+      $.each(node.outPorts, (function(key, port) {
         if (port.linkId === null) {
-          continue;
+          return;
         }
         let link = this.links[port.linkId];
         link.state = node.state;
 
         let candidate = this.nodes[link.inNodeId];
         let completed = true;
-        for (let candidatePort of candidate.inPorts) {
+        $.each(candidate.inPorts, (function(key, candidatePort) {
           if (candidatePort.linkId === null) {
             completed = false;
-            break;
+            return false;
           }
           let candidateLink = this.links[candidatePort.linkId];
           if (candidateLink.state === null) {
             completed = false;
-            break;
+            return false;
           }
-        }
+        }).bind(this));
         if (completed && visited.indexOf(candidate.nodeId) === -1) {
           queue.push(candidate.nodeId);
         }
-      }
+      }).bind(this));
 
       visited.push(node.nodeId);
     }
@@ -328,14 +328,14 @@ const resizeHandler = function() {
 
     // Initialise new map.
     let nodesToDelete = [];
-    for (let node of nodes.children()) {
+    $.each(nodes.children(), (function(key, node) {
       const n = $(node);
       let nodeInfo = n.data('nodeInfo');
       let freeSpace = findFreeSpace({ x: nodeInfo.gridX, y: nodeInfo.gridY });
       // TODO: handle no free space
       if (freeSpace === null) {
         nodesToDelete.push(node);
-        continue;
+        return;
       }
       nodeInfo.gridX = freeSpace.x;
       nodeInfo.gridY = freeSpace.y;
@@ -347,10 +347,10 @@ const resizeHandler = function() {
           map[freeSpace.x + i][freeSpace.y + j] = true;
         }
       }
-    }
-    for (let node of nodesToDelete) {
+    }).bind(this));
+    $.each(nodesToDelete, (function(key, node) {
       removeNodeElem(node);
-    }
+    }).bind(this));
 
     // Resize visible grid UI.
     const newWidth = newGridWidth * Consts.GRID + 1;
@@ -572,11 +572,11 @@ const findPath = function(inCoords, outCoords) {
 
 const toPoints = function(path) {
   let result = '';
-  for (let coords of path) {
+  $.each(path, (function(key, coords) {
     const x = (coords.x * Consts.GRID) + (Consts.GRID / 2);
     const y = (coords.y * Consts.GRID) + (Consts.GRID / 2);
     result += toCoordsString({ x, y }) + ' ';
-  }
+  }).bind(this));
   return result.slice(0, -1);
 }
 
@@ -619,17 +619,17 @@ const addLinkElem = function(inPortElem, outPortElem) {
 }
 
 const redrawLinks = function() {
-  for (let link of links.children()) {
+  $.each(links.children(), (function(key, link) {
     const linkInfo = $(link).data('linkInfo');
     const path = findPath(getPortCoords(linkInfo.inPortElem),
       getPortCoords(linkInfo.outPortElem));
     $(link).children().first().attr('points', toPoints(path));
-  }
+  }).bind(this));
 }
 
 const updateState = function() {
   Simulation.update();
-  for (let node of nodes.children()) {
+  $.each(nodes.children(), (function(key, node) {
     const n = $(node);
     const state = Simulation.getNodeState(n.data('nodeInfo').nodeId);
     if (state === null) {
@@ -642,8 +642,8 @@ const updateState = function() {
       n.removeClass('node-active');
       n.addClass('node-inactive');
     }
-  }
-  for (let link of links.children()) {
+  }).bind(this));
+  $.each(links.children(), (function(key, link) {
     const l = $(link);
     const state = Simulation.getLinkState(l.data('linkInfo').linkId);
     if (state === null) {
@@ -656,7 +656,7 @@ const updateState = function() {
       l.removeClass('link-active');
       l.addClass('link-inactive');
     }
-  }
+  }).bind(this));
 }
 
 const positionTempLine = function(portElem, pageX, pageY) {
