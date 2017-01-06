@@ -45,6 +45,10 @@ $active: rgb(128, 255, 128);
     fill: lime;
   }
 
+  .node-active .icon-input-button {
+    fill: url(#on);
+  }
+
   .node-active .icon-output-fan-path {
     animation: spin 1s linear infinite;
     transform-origin: 30px 30px;
@@ -71,8 +75,16 @@ $active: rgb(128, 255, 128);
     stroke: $inactive;
   }
 
+  .link-inactive polyline.border {
+    stroke: black;
+  }
+
   .link-active polyline {
     stroke: $active;
+  }
+
+  .link-active polyline.border {
+    stroke: black;
   }
 
 .palette {

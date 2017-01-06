@@ -250,6 +250,7 @@ const nodes = $('#nodes');
 const links = $('#links');
 const temp = $('#temp');
 const tempLine = $('#temp-line');
+const tempLineBorder = $('#temp-line-border');
 let map = [[]];
 
 // Convert coordinates from page-space (pixels) to grid-space (squares).
@@ -606,6 +607,7 @@ const addLinkElem = function(inPortElem, outPortElem) {
   const path = findPath(inPortCoords, outPortCoords);
   const link = $('#link-template').children().first().clone();
   link.children().first().attr('points', toPoints(path));
+  $(link.children()[1]).attr('points', toPoints(path));
   link.appendTo(links);
   link.offset(grid.offset());
   const linkId = Simulation.addLink(outNodeId, outPortId, inNodeId, inPortId, link);
@@ -620,10 +622,12 @@ const addLinkElem = function(inPortElem, outPortElem) {
 
 const redrawLinks = function() {
   $.each(links.children(), (function(key, link) {
-    const linkInfo = $(link).data('linkInfo');
+    link = $(link);
+    const linkInfo = link.data('linkInfo');
     const path = findPath(getPortCoords(linkInfo.inPortElem),
       getPortCoords(linkInfo.outPortElem));
-    $(link).children().first().attr('points', toPoints(path));
+    link.children().first().attr('points', toPoints(path));
+    $(link.children()[1]).attr('points', toPoints(path));
   }).bind(this));
 }
 
@@ -656,6 +660,7 @@ const updateState = function() {
       l.removeClass('link-active');
       l.addClass('link-inactive');
     }
+    l.offset(grid.offset());
   }).bind(this));
 }
 
@@ -666,6 +671,11 @@ const positionTempLine = function(portElem, pageX, pageY) {
   tempLine.attr('y1', portCoords.y + Consts.GRID / 2 - offset.top);
   tempLine.attr('x2', pageX - offset.left);
   tempLine.attr('y2', pageY - offset.top);
+  tempLineBorder.attr('x1', portCoords.x + Consts.GRID / 2 - offset.left);
+  tempLineBorder.attr('y1', portCoords.y + Consts.GRID / 2 - offset.top);
+  tempLineBorder.attr('x2', pageX - offset.left);
+  tempLineBorder.attr('y2', pageY - offset.top);
+  temp.offset(grid.offset());
 }
 
 interact('.node-grabber')
