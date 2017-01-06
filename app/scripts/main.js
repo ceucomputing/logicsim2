@@ -358,6 +358,7 @@ const resizeHandler = function() {
     grid.width(newWidth);
     $('.link').width(newWidth);
     temp.width(newWidth);
+    temp.offset(grid.offset());
 
     // Redraw links.
     redrawLinks();
@@ -715,6 +716,10 @@ interact('.node-grabber')
           }
         }
       }
+      target.offset({
+        left: event.pageX - Consts.NODE / 2 * Consts.GRID,
+        top: event.pageY - Consts.NODE / 2 * Consts.GRID
+      });
     },
 
     onend(event) {
@@ -888,10 +893,6 @@ $(document).ready(function() {
   square.attr('height', Consts.GRID);
   square.children().attr('d', `M ${Consts.GRID} 0 L 0 0 0 ${Consts.GRID}`);
 
-  // Hide placeholder link used for UI.
-  //temp.hide();
-  temp.offset(grid.offset());
-
   resizeHandler();
 
   $('.icon-input-button').click(function() {
@@ -937,3 +938,4 @@ $(document).ready(function() {
 });
 
 $(window).resize(resizeHandler);
+temp.offset(grid.offset());
