@@ -904,6 +904,12 @@ $(document).ready(function() {
     }
   });
 
+  let angle = 0;
+  setInterval(function() {
+    $('.node-active .icon-output-fan-path').attr('transform', 'rotate(' + angle + ' 30 30)');
+    angle = (angle + 10) % 360;
+  }, 20);
+
   // Set up inputs palette.
   initPalette('#palette-inputs', [
     { numInPorts: 0, numOutPorts: 1, logic: () => false, icon: '#icon-input' }

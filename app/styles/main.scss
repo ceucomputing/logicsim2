@@ -49,13 +49,6 @@ $active: rgb(128, 255, 128);
     fill: url(#on);
   }
 
-  .node-active .icon-output-fan-path {
-    animation: spin 1s linear infinite;
-    transform-origin: 30px 30px;
-  }
-
-  @keyframes spin { 100% { transform: rotate(360deg); } }
-
 .icon-input-button {
   transform-origin: 30px 50px;
   cursor: pointer;
