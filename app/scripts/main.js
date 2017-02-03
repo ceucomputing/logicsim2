@@ -927,6 +927,7 @@ $(document).ready(function() {
 
   // Set up passive palette.
   initPalette('#palette-passive', [
+    { numInPorts: 1, numOutPorts: 2, logic: (inputs) => inputs[0], icon: '#icon-passive2' },
     { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive' }
   ]);
 
