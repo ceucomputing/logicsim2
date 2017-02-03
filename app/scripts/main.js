@@ -25,7 +25,7 @@ let Simulation  = {
   links: [],
 
   // Adds a node of the given type and returns its id.
-  addNode(numInPorts, numOutPorts, logic, elem) {
+  addNode(numInPorts, numOutPorts, logic, elem, makeStatement) {
     let nodeId = this.nodes.length;
     let inPorts = [];
     let outPorts = [];
@@ -41,7 +41,9 @@ let Simulation  = {
       inPorts,
       outPorts,
       logic,
-      elem
+      elem,
+      statement: null,
+      makeStatement
     };
     return nodeId;
   },
@@ -176,6 +178,9 @@ let Simulation  = {
     $.each(this.nodes, (function(key, node) {
       if (typeof node !== 'undefined') {
         node.state = null;
+        if (node.inPorts.length !== 0) {
+          node.statement = null;
+        }
       }
     }).bind(this));
     $.each(this.links, (function(key, link) {
@@ -189,6 +194,9 @@ let Simulation  = {
       if (typeof node !== 'undefined') {
         if (node.inPorts.length === 0) {
           queue.push(node.nodeId);
+          if (node.statement === null) {
+            node.statement = nextName();
+          }
         }
       }
     }).bind(this));
@@ -197,14 +205,19 @@ let Simulation  = {
     while (queue.length > 0) {
       let node = this.nodes[queue.pop()];
       let inputs = [];
+      let statements = [];
 
       // Collate inputs.
       $.each(node.inPorts, (function(key, port) {
         inputs.push(this.links[port.linkId].state);
+        statements.push(this.nodes[this.links[port.linkId].outNodeId].statement);
       }).bind(this));
 
       // Update state.
       node.state = node.logic(inputs);
+      if (node.statement === null) {
+        node.statement = node.makeStatement(statements);
+      }
 
       // Propagate outputs and push completed nodes to queue.
       $.each(node.outPorts, (function(key, port) {
@@ -252,6 +265,20 @@ const temp = $('#temp');
 const tempLine = $('#temp-line');
 const tempLineBorder = $('#temp-line-border');
 let map = [[]];
+let namesUsed = 0;
+
+// Returns the next available variable name.
+const nextName = function() {
+  let num = namesUsed;
+  let name = String.fromCharCode(65 + num % 26);
+  num = Math.floor(num / 26);
+  while (num > 0) {
+    name = String.fromCharCode(64 + num % 26) + name;
+    num = Math.floor(num / 26);
+  } 
+  namesUsed++;
+  return name;
+}
 
 // Convert coordinates from page-space (pixels) to grid-space (squares).
 const toGrid = function(coords) {
@@ -636,17 +663,25 @@ const updateState = function() {
   Simulation.update();
   $.each(nodes.children(), (function(key, node) {
     const n = $(node);
-    const state = Simulation.getNodeState(n.data('nodeInfo').nodeId);
+    const nodeData = Simulation.getNode(n.data('nodeInfo').nodeId);
+    const state = nodeData.state;
+    n.tooltip('destroy');
+    let title = nodeData.statement === null ? '' : (nodeData.statement + ' : ');
     if (state === null) {
       n.removeClass('node-active');
       n.removeClass('node-inactive');
+      title += '?'
     } else if (state) {
       n.addClass('node-active');
       n.removeClass('node-inactive');
+      title += '1'
     } else {
       n.removeClass('node-active');
       n.addClass('node-inactive');
+      title += '0'
     }
+    n.attr('title', title);
+    n.tooltip();
   }).bind(this));
   $.each(links.children(), (function(key, link) {
     const l = $(link);
@@ -708,6 +743,7 @@ interact('.node-grabber')
 
     onstart(event) {
       const target = $(event.target).parent();
+      target.tooltip('destroy');
       let nodeInfo = target.data('nodeInfo');
       if (typeof nodeInfo !== 'undefined') {
         for (let i = 0; i < Consts.NODE; i++) {
@@ -756,7 +792,7 @@ interact('.node-grabber')
       let nodeInfo = target.data('nodeInfo');
       if (typeof nodeInfo === 'undefined') {
         const def = target.data('def');
-        const nodeId = Simulation.addNode(def.numInPorts, def.numOutPorts, def.logic, target);
+        const nodeId = Simulation.addNode(def.numInPorts, def.numOutPorts, def.logic, target, def.makeStatement);
         nodeInfo = { nodeId };
       }
       nodeInfo.gridX = gridX;
@@ -775,6 +811,9 @@ interact('.node-grabber')
 
       // Update state before leaving handler.
       updateState();
+
+      // Enable tooltip.
+      target.tooltip();
     }
 
   })
@@ -913,28 +952,28 @@ $(document).ready(function() {
 
   // Set up inputs palette.
   initPalette('#palette-inputs', [
-    { numInPorts: 0, numOutPorts: 1, logic: () => false, icon: '#icon-input' }
+    { numInPorts: 0, numOutPorts: 1, logic: () => false, icon: '#icon-input', makeStatement: (statements) => null }
   ]);
 
   // Set up logic gates palette.
   initPalette('#palette-gates', [
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and' },
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or' },
-    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not' },
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] && inputs[1]), icon: '#icon-nand' },
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] || inputs[1]), icon: '#icon-nor' }
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and', makeStatement: (statements) => '(' + statements[0] + ' AND ' + statements[1] + ')' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or', makeStatement: (statements) => '(' + statements[0] + ' OR ' + statements[1] + ')' },
+    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not', makeStatement: (statements) => '(' + 'NOT ' + statements[0] + ')' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] && inputs[1]), icon: '#icon-nand', makeStatement: (statements) => '(' + statements[0] + ' NAND ' + statements[1] + ')' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] || inputs[1]), icon: '#icon-nor', makeStatement: (statements) => '(' + statements[0] + ' NOR ' + statements[1] + ')' }
   ]);
 
   // Set up passive palette.
   initPalette('#palette-passive', [
-    { numInPorts: 1, numOutPorts: 2, logic: (inputs) => inputs[0], icon: '#icon-passive2' },
-    { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive' }
+    { numInPorts: 1, numOutPorts: 2, logic: (inputs) => inputs[0], icon: '#icon-passive2', makeStatement: (statements) => statements[0] },
+    { numInPorts: 1, numOutPorts: 3, logic: (inputs) => inputs[0], icon: '#icon-passive', makeStatement: (statements) => statements[0] }
   ]);
 
   // Set up outputs palette.
   initPalette('#palette-outputs', [
-    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-lamp' },
-    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-fan' }
+    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-lamp', makeStatement: (statements) => statements[0] },
+    { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-fan', makeStatement: (statements) => statements[0] }
   ]);
 });
 
