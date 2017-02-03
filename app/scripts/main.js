@@ -275,7 +275,7 @@ const nextName = function() {
   while (num > 0) {
     name = String.fromCharCode(64 + num % 26) + name;
     num = Math.floor(num / 26);
-  } 
+  }
   namesUsed++;
   return name;
 }
