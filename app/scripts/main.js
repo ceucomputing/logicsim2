@@ -216,7 +216,7 @@ let Simulation  = {
       // Update state.
       node.state = node.logic(inputs);
       if (node.statement === null) {
-        node.statement = node.makeStatement(statements);
+        node.statement = simplify(node.makeStatement(statements));
       }
 
       // Propagate outputs and push completed nodes to queue.
@@ -278,6 +278,16 @@ const nextName = function() {
   }
   namesUsed++;
   return name;
+}
+
+// Removes unnecessary parentheses from the given Boolean statement.
+const simplify = function(statement) {
+  let oldStatement;
+  do {
+    oldStatement = statement;
+    statement = statement.replace(/\((\w+)\)/, '$1')
+  } while (statement != oldStatement);
+  return statement;
 }
 
 // Convert coordinates from page-space (pixels) to grid-space (squares).
@@ -952,16 +962,16 @@ $(document).ready(function() {
 
   // Set up inputs palette.
   initPalette('#palette-inputs', [
-    { numInPorts: 0, numOutPorts: 1, logic: () => false, icon: '#icon-input', makeStatement: (statements) => null }
+    { numInPorts: 0, numOutPorts: 1, logic: () => false, icon: '#icon-input', makeStatement: () => null }
   ]);
 
   // Set up logic gates palette.
   initPalette('#palette-gates', [
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and', makeStatement: (statements) => '(' + statements[0] + ' AND ' + statements[1] + ')' },
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or', makeStatement: (statements) => '(' + statements[0] + ' OR ' + statements[1] + ')' },
-    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not', makeStatement: (statements) => '(' + 'NOT ' + statements[0] + ')' },
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] && inputs[1]), icon: '#icon-nand', makeStatement: (statements) => '(' + statements[0] + ' NAND ' + statements[1] + ')' },
-    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] || inputs[1]), icon: '#icon-nor', makeStatement: (statements) => '(' + statements[0] + ' NOR ' + statements[1] + ')' }
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] && inputs[1], icon: '#icon-and', makeStatement: (statements) => '(' + statements[0] + ') AND (' + statements[1] + ')' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => inputs[0] || inputs[1], icon: '#icon-or', makeStatement: (statements) => '(' + statements[0] + ') OR (' + statements[1] + ')' },
+    { numInPorts: 1, numOutPorts: 1, logic: (inputs) => !inputs[0], icon: '#icon-not', makeStatement: (statements) => 'NOT (' + statements[0] + ')' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] && inputs[1]), icon: '#icon-nand', makeStatement: (statements) => '(' + statements[0] + ') NAND (' + statements[1] + ')' },
+    { numInPorts: 2, numOutPorts: 1, logic: (inputs) => !(inputs[0] || inputs[1]), icon: '#icon-nor', makeStatement: (statements) => '(' + statements[0] + ') NOR (' + statements[1] + ')' }
   ]);
 
   // Set up passive palette.
@@ -975,6 +985,10 @@ $(document).ready(function() {
     { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-lamp', makeStatement: (statements) => statements[0] },
     { numInPorts: 1, numOutPorts: 0, logic: (inputs) => inputs[0], icon: '#icon-output-fan', makeStatement: (statements) => statements[0] }
   ]);
+
+  $(document).on('shown.bs.tooltip', function() {
+    $('.tooltip').css('top', '+=' + (document.body.scrollTop + document.documentElement.scrollTop));
+  });
 });
 
 $(window).resize(resizeHandler);
