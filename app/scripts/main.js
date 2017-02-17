@@ -952,6 +952,7 @@ $(document).ready(function() {
       simNode.logic = () => newResult;
       updateState();
     }
+    document.documentElement.style.cursor = '';
   });
 
   let angle = 0;
