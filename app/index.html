@@ -28,7 +28,7 @@
     <![endif]-->
 
     <div class="container">
-      <div class="header">
+      <!--<div class="header">
         <nav class="navbar navbar-inverse">
           <div class="navbar-header">
             <a class="navbar-brand" href="#">
@@ -36,134 +36,130 @@
             </a>
           </div>
         </nav>
-      </div>
+      </div>-->
 
       <div class="row">
-        <div class="col-xs-6 col-sm-5 col-md-4 col-lg-3">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Inputs</h3>
-            </div>
-            <div class="panel-body">
+        <div class="col-xs-4 col-sm-4 col-md-3 col-lg-3">
+          <div class="list-group">
 
-              <table id="palette-inputs" class="palette">
-                <colgroup>
-                  <col /><col /><col />
-                </colgroup>
-              </table>
+            <div class="list-group-item">
+              <!-- <h5 class="list-group-item-heading">Inputs</h5> -->
+              <p>
+                <table id="palette-inputs" class="palette">
+                  <colgroup>
+                    <col /><col /><col />
+                  </colgroup>
+                </table>
+              </p>
+            </div>
+
+            <div class="list-group-item">
+              <!-- <h5 class="list-group-item-heading">Logic Gates</h5> -->
+              <p>
+                <table id="palette-gates" class="palette">
+                  <colgroup>
+                    <col /><col /><col />
+                  </colgroup>
+                </table>
+              </p>
+            </div>
+
+            <div class="list-group-item">
+              <!-- <h5 class="list-group-item-heading">Passive</h5> -->
+              <p>
+                <table id="palette-passive" class="palette">
+                  <colgroup>
+                    <col /><col /><col />
+                  </colgroup>
+                </table>
+              </p>
+            </div>
+
+            <div class="list-group-item">
+              <!-- <h5 class="list-group-item-heading">Outputs</h5> -->
+              <p>
+                <table id="palette-outputs" class="palette">
+                  <colgroup>
+                    <col /><col /><col /><col />
+                  </colgroup>
+                </table>
+              </p>
+            </div>
+
+            <div id="templates">
+
+              <div id="node-template">
+                <svg class="node node-palette" data-animation="false" data-container="body" viewBox="0 0 60 60">
+                  <rect width="100%" height="100%" fill="silver" stroke="black" stroke-width="3" />
+                  <g class="node-grabber">
+                    <rect x="10%" y="3%" width="80%" height="94%" fill="silver" />
+                  </g>
+                  <circle class="node-port node-port-in node-port-in-1" cx="1" cy="10" r="7" fill="black" />
+                  <circle class="node-port node-port-in node-port-in-2" cx="1" cy="30" r="7" fill="black" />
+                  <circle class="node-port node-port-in node-port-in-3" cx="1" cy="50" r="7" fill="black" />
+                  <circle class="node-port node-port-out node-port-out-1" cx="60" cy="10" r="7" fill="black" />
+                  <circle class="node-port node-port-out node-port-out-2" cx="60" cy="30" r="7" fill="black" />
+                  <circle class="node-port node-port-out node-port-out-3" cx="60" cy="50" r="7" fill="black" />
+                </svg>
+              </div>
+
+              <div id="link-template">
+                <svg class="link">
+                  <polyline class="border" points="0,10 30,10 30,70 70,70 70,110 110,110 110,150 140,150" fill="transparent" stroke="black" stroke-width="7" />
+                  <polyline points="0,10 30,10 30,70 70,70 70,110 110,110 110,150 140,150" fill="transparent" stroke="silver" stroke-width="5" />
+                </svg>
+              </div>
+
+              <div id="icon-template">
+                <svg id="icon-input">
+                   <circle class="icon-input-circle" cx="30" cy="12" r="5" fill="gray" stroke="black" stroke-width="3" />
+                   <path class="icon-input-button" d="m 15,23 30,0 0,30 -30,0 z" fill="url(#off)" stroke="black" stroke-width="1" />
+                </svg>
+                <svg id="icon-and">
+                   <path d="m 15,15 0,30 15,0 c 0,0 15,0 15,-15 0,-15 -15,-15 -15,-15 z" fill="white" stroke="black" stroke-width="3" />
+                </svg>
+                <svg id="icon-nand">
+                   <path d="m 15,15 0,30 10,0 c 0,0 15,0 15,-15 0,-15 -15,-15 -15,-15 z" fill="white" stroke="black" stroke-width="3" />
+                   <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
+                </svg>
+                <svg id="icon-or">
+                   <path d="m 15,15 c 0,0 6,9 6,15 0,6 -6,15 -6,15 0,0 9,0 15,0 6,0 15,-15 15,-15 0,0 -9,-15 -15,-15 -6,0 -15,0 -15,0 z" fill="white" stroke="black" stroke-width="3" />
+                </svg>
+                <svg id="icon-nor">
+                   <path d="m 15,15 c 0,0 6,9 6,15 0,6 -6,15 -6,15 0,0 9,0 10,0 6,0 15,-15 15,-15 0,0 -9,-15 -15,-15 -6,0 -10,0 -10,0 z" fill="white" stroke="black" stroke-width="3" />
+                   <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
+                </svg>
+                <svg id="icon-not">
+                   <path d="m 15,15 0,30 24,-15 z" fill="white" stroke="black" stroke-width="3" />
+                   <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
+                </svg>
+                <svg id="icon-passive">
+                  <g>
+                    <path d="m 0,30 60,0" fill="white" stroke="black" stroke-width="3" />
+                    <path d="m 60,10 -30,0 0,40 30,0" fill="none" stroke="black" stroke-width="3" />
+                  </g>
+                </svg>
+                <svg id="icon-passive2">
+                  <g>
+                    <path d="m 0,30 30,0" fill="white" stroke="black" stroke-width="3" />
+                    <path d="m 60,10 -30,0 0,40 30,0" fill="none" stroke="black" stroke-width="3" />
+                  </g>
+                </svg>
+                <svg id="icon-output-lamp">
+                  <circle class="icon-output-lamp-circle" cx="30" cy="30" r="15" fill="gray" stroke="black" stroke-width="3" />
+                </svg>
+                <svg id="icon-output-fan">
+                  <g class="icon-output-fan-path">
+                    <path d="m 30,30 c 0,0 -21,-9 -15,-15 6,-6 15,15 15,15 z c 0,0 9,-21 15,-15 6,6 -15,15 -15,15 z c 0,0 21,9 15,15 -6,6 -15,-15 -15,-15 z c 0,0 -9,21 -15,15 -6,-6 15,-15 15,-15 z" fill="white" stroke="black" stroke-width="3" />
+                  </g>
+                </svg>
+              </div>
 
             </div>
-          </div>
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Logic Gates</h3>
-            </div>
-            <div class="panel-body">
 
-              <table id="palette-gates" class="palette">
-                <colgroup>
-                  <col /><col /><col />
-                </colgroup>
-              </table>
-
-            </div>
-          </div>
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Passive</h3>
-            </div>
-            <div class="panel-body">
-
-              <table id="palette-passive" class="palette">
-                <colgroup>
-                  <col /><col /><col />
-                </colgroup>
-              </table>
-
-            </div>
-          </div>
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Outputs</h3>
-            </div>
-            <div class="panel-body">
-
-              <table id="palette-outputs" class="palette">
-                <colgroup>
-                  <col /><col /><col /><col />
-                </colgroup>
-              </table>
-
-            </div>
-          </div>
-          <div id="templates">
-            <div id="node-template">
-              <svg class="node node-palette" data-animation="false" data-container="body">
-                <rect width="100%" height="100%" fill="silver" stroke="black" stroke-width="3" />
-                <g class="node-grabber">
-                  <rect x="10%" y="3%" width="80%" height="94%" fill="silver" />
-                </g>
-                <circle class="node-port node-port-in node-port-in-1" cx="1" cy="10" r="7" fill="black" />
-                <circle class="node-port node-port-in node-port-in-2" cx="1" cy="30" r="7" fill="black" />
-                <circle class="node-port node-port-in node-port-in-3" cx="1" cy="50" r="7" fill="black" />
-                <circle class="node-port node-port-out node-port-out-1" cx="60" cy="10" r="7" fill="black" />
-                <circle class="node-port node-port-out node-port-out-2" cx="60" cy="30" r="7" fill="black" />
-                <circle class="node-port node-port-out node-port-out-3" cx="60" cy="50" r="7" fill="black" />
-              </svg>
-            </div>
-            <div id="link-template">
-              <svg class="link">
-                <polyline class="border" points="0,10 30,10 30,70 70,70 70,110 110,110 110,150 140,150" fill="transparent" stroke="black" stroke-width="7" />
-                <polyline points="0,10 30,10 30,70 70,70 70,110 110,110 110,150 140,150" fill="transparent" stroke="silver" stroke-width="5" />
-              </svg>
-            </div>
-            <div id="icon-template">
-              <svg id="icon-input">
-                 <circle class="icon-input-circle" cx="30" cy="12" r="5" fill="gray" stroke="black" stroke-width="3" />
-                 <path class="icon-input-button" d="m 15,23 30,0 0,30 -30,0 z" fill="url(#off)" stroke="black" stroke-width="1" />
-              </svg>
-              <svg id="icon-and">
-                 <path d="m 15,15 0,30 15,0 c 0,0 15,0 15,-15 0,-15 -15,-15 -15,-15 z" fill="white" stroke="black" stroke-width="3" />
-              </svg>
-              <svg id="icon-nand">
-                 <path d="m 15,15 0,30 10,0 c 0,0 15,0 15,-15 0,-15 -15,-15 -15,-15 z" fill="white" stroke="black" stroke-width="3" />
-                 <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
-              </svg>
-              <svg id="icon-or">
-                 <path d="m 15,15 c 0,0 6,9 6,15 0,6 -6,15 -6,15 0,0 9,0 15,0 6,0 15,-15 15,-15 0,0 -9,-15 -15,-15 -6,0 -15,0 -15,0 z" fill="white" stroke="black" stroke-width="3" />
-              </svg>
-              <svg id="icon-nor">
-                 <path d="m 15,15 c 0,0 6,9 6,15 0,6 -6,15 -6,15 0,0 9,0 10,0 6,0 15,-15 15,-15 0,0 -9,-15 -15,-15 -6,0 -10,0 -10,0 z" fill="white" stroke="black" stroke-width="3" />
-                 <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
-              </svg>
-              <svg id="icon-not">
-                 <path d="m 15,15 0,30 24,-15 z" fill="white" stroke="black" stroke-width="3" />
-                 <circle cx="45" cy="30" r="3" fill="white" stroke="black" stroke-width="3" />
-              </svg>
-              <svg id="icon-passive">
-                <g>
-                  <path d="m 0,30 60,0" fill="white" stroke="black" stroke-width="3" />
-                  <path d="m 60,10 -30,0 0,40 30,0" fill="none" stroke="black" stroke-width="3" />
-                </g>
-              </svg>
-              <svg id="icon-passive2">
-                <g>
-                  <path d="m 0,30 30,0" fill="white" stroke="black" stroke-width="3" />
-                  <path d="m 60,10 -30,0 0,40 30,0" fill="none" stroke="black" stroke-width="3" />
-                </g>
-              </svg>
-              <svg id="icon-output-lamp">
-                <circle class="icon-output-lamp-circle" cx="30" cy="30" r="15" fill="gray" stroke="black" stroke-width="3" />
-              </svg>
-              <svg id="icon-output-fan">
-                <g class="icon-output-fan-path">
-                  <path d="m 30,30 c 0,0 -21,-9 -15,-15 6,-6 15,15 15,15 z c 0,0 9,-21 15,-15 6,6 -15,15 -15,15 z c 0,0 21,9 15,15 -6,6 -15,-15 -15,-15 z c 0,0 -9,21 -15,15 -6,-6 15,-15 15,-15 z" fill="white" stroke="black" stroke-width="3" />
-                </g>
-              </svg>
-            </div>
           </div>
         </div>
-        <div id="board" class="col-xs-6 col-sm-7 col-md-8 col-lg-9">
+        <div id="board" class="col-xs-8 col-sm-8 col-md-9 col-lg-9">
 
           <svg id="grid">
             <defs>
@@ -212,7 +208,7 @@
       </div>
 
       <div class="footer">
-        <p>Copyright &copy; 2016 Ministry of Education, Singapore. All rights reserved.</p>
+        <p>Copyright &copy; 2016–2017 Ministry of Education, Singapore. All rights reserved.</p>
       </div>
     </div>
 

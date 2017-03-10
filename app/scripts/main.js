@@ -4,8 +4,8 @@
 /* global $:false, interact:false */
 
 const Consts = {
-  GRID: 20,
-  HEIGHT: 33,
+  GRID: 15,
+  HEIGHT: 27,
   NODE: 3,
   PALETTE: 3
 };
