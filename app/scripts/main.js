@@ -1,7 +1,7 @@
 // Logic Gate Simulator
 // Copyright (c) 2016 Ministry of Education, Singapore. All rights reserved.
 
-/* global $:false, interact:false */
+/* global $:false, interact:false, bootbox:false */
 
 const Consts = {
   GRID: 20,
