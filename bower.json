@@ -4,7 +4,8 @@
   "dependencies": {
     "bootstrap-sass": "~3.3.5",
     "modernizr": "~2.8.1",
-    "interact": "^1.2.6"
+    "interact": "^1.2.6",
+    "bootbox.js": "^4.4.0"
   },
   "overrides": {
     "bootstrap-sass": {

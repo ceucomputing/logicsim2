@@ -101,6 +101,17 @@ $active: rgb(128, 255, 128);
     height: $node * $grid;
   }
 
+.overlay {
+  display: none;
+}
+
+.instructions { }
+
+  .instructions img {
+    border: 1px solid black;
+    margin: 0.5em 0 0.5em 1em;
+  }
+
 #templates {
   display: none;
 }

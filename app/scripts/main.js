@@ -990,6 +990,11 @@ $(document).ready(function() {
   $(document).on('shown.bs.tooltip', function() {
     $('.tooltip').css('top', '+=' + (document.body.scrollTop + document.documentElement.scrollTop));
   });
+
+  bootbox.alert({
+    title: 'Instructions',
+    message: $('#instructions-overlay').html()
+  });
 });
 
 $(window).resize(resizeHandler);

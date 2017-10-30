@@ -212,7 +212,24 @@
       </div>
 
       <div class="footer">
-        <p>Copyright &copy; 2016 Ministry of Education, Singapore. All rights reserved.</p>
+        <p>Copyright &copy; 2016-2017 Ministry of Education, Singapore. All rights reserved.</p>
+      </div>
+
+      <div id="instructions-overlay" class="overlay">
+        <table class="instructions">
+          <tr>
+            <td>To add a circuit component (i.e., input, logic gate, branch or output), drag it from the left-hand menu onto the grid.</td>
+            <td><img src="images/add.gif" alt="Add components"></td>
+          </tr>
+          <tr>
+            <td>To connect two logic circuit components together, drag from the connector of one component to the connector of another component. Connectors are semi-circular in shape.</td>
+            <td><img src="images/connect.gif" alt="Connect components"></td>
+          </tr>
+          <tr>
+            <td>To remove a circuit component, drag it off the grid.</td>
+            <td><img src="images/remove.gif" alt="Remove components"></td>
+          </tr>
+        </table>
       </div>
     </div>
 
@@ -230,6 +247,8 @@
     <!-- bower:js -->
     <script src="/bower_components/jquery/dist/jquery.js"></script>
     <script src="/bower_components/interact/interact.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="/bower_components/bootbox.js/bootbox.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
